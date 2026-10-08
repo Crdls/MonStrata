@@ -77,3 +77,17 @@ test/           тест парсера на реальных фикстурах
 ```sh
 node test/parse.test.mjs
 ```
+
+## Примечания
+
+- Требуется Node ≥ 22.22 / 24.15 (на более старом Node 24 Nuxt 4.6 может
+  ругаться EBADENGINE).
+- В `nuxt.config.ts` два важных обхода окружения:
+  - `nitro.externals.inline` — костыль под Windows до фикса
+    [nuxt/nuxt#36467](https://github.com/nuxt/nuxt/issues/36467)
+    (без него весь SSR отдаёт 500);
+  - `nitro.experimental.websocket: true` — включает подключение WebSocket
+    апгрейда в серверном пресете (иначе `/_ws` не работает ни в dev, ни в проде).
+- `/metrics` Strata отдаёт JSON без заголовка `Accept: text/plain` —
+  скрейпер всегда шлёт этот заголовок.
+- Авторизации нет: сервис для доверенной сети, наружу не торчим.
