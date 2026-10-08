@@ -8,6 +8,7 @@ interface Settings {
 
 const { data, refresh } = useFetch<Settings>('/api/settings')
 const toast = useToast()
+const { t } = useI18n()
 
 const form = reactive<Settings>({ scrapeIntervalS: 10, rollupIntervalS: 30, rawRetentionH: 48, hourlyRetentionD: 400 })
 watchEffect(() => {
@@ -21,10 +22,10 @@ async function save () {
   try {
     await $fetch('/api/settings', { method: 'PUT', body: { ...form } })
     await refresh()
-    toast.add({ title: 'Settings saved', description: 'New intervals take effect immediately', color: 'success' })
+    toast.add({ title: t('settings.toastSaved'), description: t('settings.toastApplied'), color: 'success' })
   } catch (err: unknown) {
     toast.add({
-      title: 'Could not save settings',
+      title: t('settings.toastSaveFailed'),
       description: (err as { statusMessage?: string })?.statusMessage ?? String(err),
       color: 'error'
     })
@@ -36,42 +37,30 @@ async function save () {
 
 <template>
   <div class="max-w-2xl">
-    <h1 class="text-xl font-semibold mb-1">Settings</h1>
-    <p class="text-sm text-muted mb-5">Background job intervals and data retention. Changes apply without a restart.</p>
+    <h1 class="text-xl font-semibold mb-1">{{ t('settings.title') }}</h1>
+    <p class="text-sm text-muted mb-5">{{ t('settings.description') }}</p>
 
     <UCard>
       <form class="space-y-5" @submit.prevent="save">
-        <UFormField
-          label="Scrape interval (seconds)"
-          help="How often every enabled server's /metrics is polled. 2–600."
-        >
+        <UFormField :label="t('settings.scrape')" :help="t('settings.scrapeHelp')">
           <UInputNumber v-model="form.scrapeIntervalS" :min="2" :max="600" :step="1" class="w-40" />
         </UFormField>
 
-        <UFormField
-          label="Rollup interval (seconds)"
-          help="How often raw samples are downsampled into hourly/daily aggregates and old raw data is pruned. 5–3600."
-        >
+        <UFormField :label="t('settings.rollup')" :help="t('settings.rollupHelp')">
           <UInputNumber v-model="form.rollupIntervalS" :min="5" :max="3600" :step="5" class="w-40" />
         </UFormField>
 
-        <UFormField
-          label="Raw data retention (hours)"
-          help="Raw samples older than this are deleted. Drives the 24h heatmap and short-range charts. 1–720."
-        >
+        <UFormField :label="t('settings.rawRetention')" :help="t('settings.rawRetentionHelp')">
           <UInputNumber v-model="form.rawRetentionH" :min="1" :max="720" :step="1" class="w-40" />
         </UFormField>
 
-        <UFormField
-          label="Hourly rollup retention (days)"
-          help="Hourly aggregates older than this are deleted. Daily aggregates are kept forever. 7–3650."
-        >
+        <UFormField :label="t('settings.hourlyRetention')" :help="t('settings.hourlyRetentionHelp')">
           <UInputNumber v-model="form.hourlyRetentionD" :min="7" :max="3650" :step="1" class="w-40" />
         </UFormField>
 
         <div class="flex justify-end pt-2">
           <UButton type="submit" :loading="saving">
-            Save
+            {{ t('common.save') }}
           </UButton>
         </div>
       </form>

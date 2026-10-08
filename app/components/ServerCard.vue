@@ -3,6 +3,7 @@ import type { LiveServer } from '../plugins/live'
 import { fmtBytes, fmtNum, parseLabelStr } from '../utils/format'
 
 const props = defineProps<{ server: LiveServer }>()
+const { t } = useI18n()
 
 const snap = computed(() => props.server.snapshot)
 
@@ -80,15 +81,15 @@ const lastScrape = computed(() => {
         </div>
         <div>
           <div class="text-lg font-semibold tabular-nums">{{ fmtNum(one('vllm:num_requests_running'), 0) }}</div>
-          <div class="text-[10px] uppercase tracking-wide text-muted">running</div>
+          <div class="text-[10px] uppercase tracking-wide text-muted">{{ t('card.running') }}</div>
         </div>
         <div>
           <div class="text-lg font-semibold tabular-nums">{{ fmtNum(one('vllm:num_requests_waiting'), 0) }}</div>
-          <div class="text-[10px] uppercase tracking-wide text-muted">queued</div>
+          <div class="text-[10px] uppercase tracking-wide text-muted">{{ t('card.queued') }}</div>
         </div>
         <div>
           <div class="text-lg font-semibold tabular-nums">{{ fmtNum(kvPct, 0) }}%</div>
-          <div class="text-[10px] uppercase tracking-wide text-muted">KV cache</div>
+          <div class="text-[10px] uppercase tracking-wide text-muted">{{ t('card.kvCache') }}</div>
         </div>
       </div>
 
@@ -111,20 +112,20 @@ const lastScrape = computed(() => {
 
       <!-- host -->
       <div class="grid grid-cols-2 gap-3">
-        <GaugeBar :value="one('strata:cpu')" label="CPU" :right="`${fmtNum(one('strata:cpu'), 0)}%`" />
-        <GaugeBar :value="ramPct" label="RAM" :right="`${fmtBytes(one('strata:ram_used_bytes'))}`" />
+        <GaugeBar :value="one('strata:cpu')" :label="t('card.cpu')" :right="`${fmtNum(one('strata:cpu'), 0)}%`" />
+        <GaugeBar :value="ramPct" :label="t('card.ram')" :right="`${fmtBytes(one('strata:ram_used_bytes'))}`" />
       </div>
 
       <div class="flex items-center justify-between pt-1 text-xs text-muted">
-        <span>hit {{ fmtNum((one('strata:last_hit_rate') ?? 0) * 100, 0) }}%</span>
-        <span>req {{ fmtNum(one('vllm:request_success_total'), 0) }}</span>
-        <span>gen {{ fmtNum(one('vllm:generation_tokens_total'), 0) }} tok</span>
+        <span>{{ t('card.hit', { v: fmtNum((one('strata:last_hit_rate') ?? 0) * 100, 0) }) }}</span>
+        <span>{{ t('card.req', { n: fmtNum(one('vllm:request_success_total'), 0) }) }}</span>
+        <span>{{ t('card.gen', { n: fmtNum(one('vllm:generation_tokens_total'), 0) }) }}</span>
         <span>{{ lastScrape }}</span>
       </div>
     </div>
     <div v-else class="py-6 text-center text-sm text-muted">
-      <template v-if="!server.enabled">Server is disabled</template>
-      <template v-else>{{ snap?.error ?? 'Waiting for first scrape…' }}</template>
+      <template v-if="!server.enabled">{{ t('card.disabled') }}</template>
+      <template v-else>{{ snap?.error ?? t('card.waiting') }}</template>
     </div>
   </UCard>
 </template>

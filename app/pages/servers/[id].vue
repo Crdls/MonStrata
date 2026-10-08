@@ -14,19 +14,19 @@ const RANGES = [
 ]
 const rangeIdx = ref(0)
 
-const CHARTS: Array<{ title: string, keys: string[], unit: string, scale?: number }> = [
-  { title: 'GPU util', keys: ['strata:gpu_util'], unit: '%' },
-  { title: 'GPU memory', keys: ['derived:gpu_mem_pct'], unit: '%' },
-  { title: 'GPU temperature', keys: ['strata:gpu_temp_celsius'], unit: '°C' },
-  { title: 'GPU power', keys: ['strata:gpu_power_watts'], unit: 'W' },
-  { title: 'Throughput', keys: ['strata:live_tok_s', 'derived:gen_tok_s', 'derived:prompt_tok_s'], unit: 'tok/s' },
-  { title: 'Requests', keys: ['vllm:num_requests_running', 'vllm:num_requests_waiting'], unit: '' },
-  { title: 'Request rate', keys: ['derived:req_s'], unit: 'req/s' },
-  { title: 'Latency (window avg)', keys: ['derived:ttft_avg_s', 'derived:itl_avg_s', 'derived:e2e_avg_s'], unit: 's' },
-  { title: 'KV cache', keys: ['vllm:kv_cache_usage_perc'], unit: '%', scale: 100 },
-  { title: 'Expert cache hit rate', keys: ['strata:last_hit_rate'], unit: '%', scale: 100 },
-  { title: 'Host load', keys: ['strata:cpu', 'derived:ram_pct'], unit: '%' },
-  { title: 'Engine busy', keys: ['derived:decode_busy_pct', 'derived:prefill_busy_pct'], unit: '%' }
+const CHARTS: Array<{ titleKey: string, keys: string[], unit: string, scale?: number }> = [
+  { titleKey: 'server.charts.gpuUtil', keys: ['strata:gpu_util'], unit: '%' },
+  { titleKey: 'server.charts.gpuMemory', keys: ['derived:gpu_mem_pct'], unit: '%' },
+  { titleKey: 'server.charts.gpuTemp', keys: ['strata:gpu_temp_celsius'], unit: '°C' },
+  { titleKey: 'server.charts.gpuPower', keys: ['strata:gpu_power_watts'], unit: 'W' },
+  { titleKey: 'server.charts.throughput', keys: ['strata:live_tok_s', 'derived:gen_tok_s', 'derived:prompt_tok_s'], unit: 'tok/s' },
+  { titleKey: 'server.charts.requests', keys: ['vllm:num_requests_running', 'vllm:num_requests_waiting'], unit: '' },
+  { titleKey: 'server.charts.reqRate', keys: ['derived:req_s'], unit: 'req/s' },
+  { titleKey: 'server.charts.latency', keys: ['derived:ttft_avg_s', 'derived:itl_avg_s', 'derived:e2e_avg_s'], unit: 's' },
+  { titleKey: 'server.charts.kvCache', keys: ['vllm:kv_cache_usage_perc'], unit: '%', scale: 100 },
+  { titleKey: 'server.charts.hitRate', keys: ['strata:last_hit_rate'], unit: '%', scale: 100 },
+  { titleKey: 'server.charts.hostLoad', keys: ['strata:cpu', 'derived:ram_pct'], unit: '%' },
+  { titleKey: 'server.charts.engineBusy', keys: ['derived:decode_busy_pct', 'derived:prefill_busy_pct'], unit: '%' }
 ]
 
 interface ChartState {
@@ -37,7 +37,9 @@ interface ChartState {
   loading: boolean
 }
 
-const charts = ref<ChartState[]>(CHARTS.map(c => ({ title: c.title, unit: c.unit, scale: c.scale ?? 1, series: [], loading: true })))
+const { t, te, locale } = useI18n()
+
+const charts = ref<ChartState[]>(CHARTS.map(c => ({ title: t(c.titleKey), unit: c.unit, scale: c.scale ?? 1, series: [], loading: true })))
 
 const { servers } = useLive()
 const server = computed(() => servers.value.find(s => s.id === id.value) ?? null)
@@ -45,23 +47,24 @@ const server = computed(() => servers.value.find(s => s.id === id.value) ?? null
 async function load () {
   const to = Date.now()
   const from = to - RANGES[rangeIdx.value]!.ms
-  charts.value = await Promise.all(CHARTS.map(async (c, i) => {
+  charts.value = await Promise.all(CHARTS.map(async (c) => {
     const perKey = await Promise.all(c.keys.map(async (key) => {
       try {
-        const res = await $fetch<{ label: string, series: Array<{ labels: string, points: Array<[number, number]> }> }>(
+        const res = await $fetch<{ metric: string, label: string, series: Array<{ labels: string, points: Array<[number, number]> }> }>(
           '/api/range',
           { query: { serverId: id.value, metric: key, from, to } }
         )
+        const label = te(`metric.${res.metric}`) ? t(`metric.${res.metric}`) : res.label
         const multi = res.series.length > 1
         return res.series.map(s => ({
-          name: multi ? seriesName(res.label, s.labels) : res.label,
+          name: multi ? seriesName(label, s.labels) : label,
           points: s.points
         }))
       } catch {
         return [] as ChartSeries[]
       }
     }))
-    return { title: c.title, unit: c.unit, scale: c.scale ?? 1, series: perKey.flat(), loading: false }
+    return { title: t(c.titleKey), unit: c.unit, scale: c.scale ?? 1, series: perKey.flat(), loading: false }
   }))
 }
 
@@ -70,7 +73,7 @@ onMounted(() => {
   void load()
   timer = setInterval(load, 30_000)
 })
-watch(rangeIdx, load)
+watch([rangeIdx, locale], load)
 onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 </script>
 

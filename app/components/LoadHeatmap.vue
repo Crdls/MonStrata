@@ -21,6 +21,8 @@ export interface HeatmapData {
 
 const props = defineProps<{ data: HeatmapData }>()
 
+const { t } = useI18n()
+
 const maxValue = computed(() => {
   if (props.data.unit === '%') return 100
   let max = 0
@@ -76,7 +78,7 @@ function showTip (ev: MouseEvent, row: HeatmapRow, bucket: number, v: number | n
     y: ev.clientY + 14,
     name: row.name,
     time: tickLabel(bucket),
-    value: v === null ? 'no data' : `${fmtNum(v * props.data.scale)} ${props.data.unit}`
+    value: v === null ? t('heatmap.noData') : `${fmtNum(v * props.data.scale)} ${props.data.unit}`
   }
 }
 
@@ -125,7 +127,7 @@ function hideTip () {
       <span>0</span>
       <div class="h-2 w-40 rounded-full" :style="{ background: legendGradient }" />
       <span>{{ fmtNum(maxValue) }} {{ data.unit }}</span>
-      <span class="ml-3 opacity-70">empty cell = no data</span>
+      <span class="ml-3 opacity-70">{{ t('heatmap.emptyCell') }}</span>
     </div>
 
     <Teleport to="body">

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { HeatmapData } from '../components/LoadHeatmap.vue'
 
+const { t, te } = useI18n()
+
 const period = ref('24h')
 const metric = ref('strata:gpu_util')
 
@@ -9,16 +11,16 @@ const { data, pending, error } = await useFetch<HeatmapData>('/api/heatmap', {
   watch: [period, metric]
 })
 
-const periodItems = [
-  { label: 'Last 24 hours', value: '24h' },
-  { label: 'Last 7 days', value: '7d' },
-  { label: 'Last 30 days', value: '30d' },
-  { label: 'Last year', value: '1y' }
-]
+const periodItems = computed(() => [
+  { label: t('heatmap.period24h'), value: '24h' },
+  { label: t('heatmap.period7d'), value: '7d' },
+  { label: t('heatmap.period30d'), value: '30d' },
+  { label: t('heatmap.period1y'), value: '1y' }
+])
 
 const metricItems = computed(() =>
   (data.value?.availableMetrics ?? []).map(m => ({
-    label: m.unit ? `${m.label} (${m.unit})` : m.label,
+    label: te(`metric.${m.value}`) ? t(`metric.${m.value}`) : (m.unit ? `${m.label} (${m.unit})` : m.label),
     value: m.value
   }))
 )
@@ -28,9 +30,9 @@ const metricItems = computed(() =>
   <div>
     <div class="flex flex-wrap items-end justify-between gap-3 mb-5">
       <div>
-        <h1 class="text-xl font-semibold">Load heatmap</h1>
+        <h1 class="text-xl font-semibold">{{ t('heatmap.title') }}</h1>
         <p class="text-sm text-muted mt-0.5">
-          Average load per time bucket, per server
+          {{ t('heatmap.subtitle') }}
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -44,7 +46,7 @@ const metricItems = computed(() =>
       color="error"
       variant="subtle"
       icon="i-lucide-triangle-alert"
-      title="Failed to load heatmap"
+      :title="t('heatmap.errorTitle')"
       :description="String(error.statusMessage ?? error)"
       class="mb-4"
     />
@@ -55,7 +57,7 @@ const metricItems = computed(() =>
       </div>
       <LoadHeatmap v-else-if="data && data.rows.length" :data="data" />
       <div v-else class="py-12 text-center text-sm text-muted">
-        No servers yet — add one on the Servers page.
+        {{ t('heatmap.empty') }}
       </div>
     </UCard>
   </div>

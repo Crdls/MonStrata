@@ -12,6 +12,7 @@ interface ServerRow {
 
 const { data: servers, refresh } = useFetch<ServerRow[]>('/api/servers')
 const toast = useToast()
+const { t } = useI18n()
 
 const formOpen = ref(false)
 const editing = ref<ServerRow | null>(null)
@@ -53,11 +54,11 @@ async function save () {
       await $fetch('/api/servers', { method: 'POST', body: { ...form } })
     }
     formOpen.value = false
-    toast.add({ title: 'Server saved', color: 'success' })
+    toast.add({ title: t('servers.toastSaved'), color: 'success' })
     await refresh()
   } catch (err: unknown) {
     toast.add({
-      title: 'Could not save server',
+      title: t('servers.toastSaveFailed'),
       description: (err as { statusMessage?: string })?.statusMessage ?? String(err),
       color: 'error'
     })
@@ -71,7 +72,7 @@ async function toggle (server: ServerRow, enabled: boolean) {
     await $fetch(`/api/servers/${server.id}`, { method: 'PATCH', body: { enabled } })
     await refresh()
   } catch {
-    toast.add({ title: 'Toggle failed', color: 'error' })
+    toast.add({ title: t('servers.toastToggleFailed'), color: 'error' })
   }
 }
 
@@ -83,10 +84,10 @@ async function ping (server: ServerRow) {
       { method: 'POST' }
     )
     toast.add(res.ok
-      ? { title: `${server.name}: reachable in ${res.ms} ms`, description: `${res.series} series parsed`, color: 'success' }
-      : { title: `${server.name}: unreachable`, description: res.error, color: 'error' })
+      ? { title: t('servers.toastReachable', { name: server.name, ms: res.ms }), description: t('servers.toastParsed', { n: res.series ?? 0 }), color: 'success' }
+      : { title: t('servers.toastUnreachable', { name: server.name }), description: res.error, color: 'error' })
   } catch {
-    toast.add({ title: 'Ping request failed', color: 'error' })
+    toast.add({ title: t('servers.toastPingFailed'), color: 'error' })
   } finally {
     pinging.value = null
   }
@@ -96,7 +97,7 @@ async function remove () {
   if (!deleteTarget.value) return
   try {
     await $fetch(`/api/servers/${deleteTarget.value.id}`, { method: 'DELETE' })
-    toast.add({ title: 'Server removed', color: 'success' })
+    toast.add({ title: t('servers.toastRemoved'), color: 'success' })
     await refresh()
   } finally {
     deleteTarget.value = null
@@ -112,11 +113,11 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
   <div>
     <div class="flex items-center justify-between mb-5">
       <div>
-        <h1 class="text-xl font-semibold">Servers</h1>
-        <p class="text-sm text-muted mt-0.5">Strata engines polled from their <code>/metrics</code> endpoint</p>
+        <h1 class="text-xl font-semibold">{{ t('servers.title') }}</h1>
+        <p class="text-sm text-muted mt-0.5">{{ t('servers.subtitle') }}</p>
       </div>
       <UButton icon="i-lucide-plus" size="sm" @click="openAdd">
-        Add server
+        {{ t('common.addServer') }}
       </UButton>
     </div>
 
@@ -124,11 +125,11 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-xs uppercase tracking-wide text-muted border-b border-default">
-            <th class="py-2 pr-3 font-medium">Name</th>
+            <th class="py-2 pr-3 font-medium">{{ t('servers.name') }}</th>
             <th class="py-2 pr-3 font-medium">URL</th>
-            <th class="py-2 pr-3 font-medium text-center">Status</th>
-            <th class="py-2 pr-3 font-medium text-center">Enabled</th>
-            <th class="py-2 font-medium text-right">Actions</th>
+            <th class="py-2 pr-3 font-medium text-center">{{ t('servers.status') }}</th>
+            <th class="py-2 pr-3 font-medium text-center">{{ t('servers.enabled') }}</th>
+            <th class="py-2 font-medium text-right">{{ t('servers.actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -148,7 +149,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
                 variant="subtle"
                 size="sm"
               >
-                off
+                {{ t('servers.statusOff') }}
               </UBadge>
               <UBadge
                 v-else-if="server.up"
@@ -156,11 +157,11 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
                 variant="subtle"
                 size="sm"
               >
-                up
+                {{ t('servers.statusUp') }}
               </UBadge>
-              <UTooltip v-else :text="server.error ?? 'not scraped yet'">
+              <UTooltip v-else :text="server.error ?? ''">
                 <UBadge color="error" variant="subtle" size="sm">
-                  {{ server.up === null ? 'n/a' : 'down' }}
+                  {{ server.up === null ? t('servers.statusNa') : t('servers.statusDown') }}
                 </UBadge>
               </UTooltip>
             </td>
@@ -180,19 +181,19 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
                 :loading="pinging === server.id"
                 @click="ping(server)"
               >
-                Test
+                {{ t('servers.test') }}
               </UButton>
               <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-pencil" @click="openEdit(server)">
-                Edit
+                {{ t('servers.edit') }}
               </UButton>
               <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" @click="deleteTarget = server">
-                Delete
+                {{ t('servers.delete') }}
               </UButton>
             </td>
           </tr>
           <tr v-if="!servers?.length">
             <td colspan="5" class="py-10 text-center text-muted">
-              No servers yet. Click “Add server” to start monitoring.
+              {{ t('servers.empty') }}
             </td>
           </tr>
         </tbody>
@@ -200,21 +201,21 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
     </UCard>
 
     <!-- add / edit modal -->
-    <UModal v-model:open="formOpen" :title="editing ? `Edit ${editing.name}` : 'Add server'">
+    <UModal v-model:open="formOpen" :title="editing ? t('servers.editTitle', { name: editing.name }) : t('servers.addTitle')">
       <template #body>
         <form class="space-y-4" @submit.prevent="save">
-          <UFormField label="Name" required>
+          <UFormField :label="t('servers.name')" required>
             <UInput v-model="form.name" placeholder="r2d2" class="w-full" autofocus />
           </UFormField>
-          <UFormField label="Base URL" required help="Metrics are read from <url>/metrics">
+          <UFormField :label="t('servers.baseUrl')" required :help="t('servers.baseUrlHelp')">
             <UInput v-model="form.url" placeholder="http://192.168.10.76:8000" class="w-full" />
           </UFormField>
           <div class="flex justify-end gap-2 pt-2">
             <UButton color="neutral" variant="ghost" @click="formOpen = false">
-              Cancel
+              {{ t('common.cancel') }}
             </UButton>
             <UButton type="submit" :loading="saving">
-              {{ editing ? 'Save' : 'Add' }}
+              {{ editing ? t('common.save') : t('servers.add') }}
             </UButton>
           </div>
         </form>
@@ -224,19 +225,19 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
     <!-- delete confirm -->
     <UModal
       :open="!!deleteTarget"
-      title="Remove server"
+      :title="t('servers.confirmTitle')"
       @update:open="(v: boolean) => { if (!v) deleteTarget = null }"
     >
       <template #body>
         <p class="text-sm">
-          Remove <b>{{ deleteTarget?.name }}</b> and all its stored history? This cannot be undone.
+          {{ t('servers.confirmText', { name: deleteTarget?.name ?? '' }) }}
         </p>
         <div class="flex justify-end gap-2 pt-4">
           <UButton color="neutral" variant="ghost" @click="deleteTarget = null">
-            Cancel
+            {{ t('common.cancel') }}
           </UButton>
           <UButton color="error" @click="remove">
-            Delete
+            {{ t('servers.delete') }}
           </UButton>
         </div>
       </template>

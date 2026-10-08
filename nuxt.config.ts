@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['@nuxt/ui'],
+  modules: ['@nuxt/ui', '@nuxtjs/i18n'],
   css: ['~/assets/css/main.css'],
   nitro: {
     // native module must not be bundled
@@ -17,6 +17,23 @@ export default defineNuxtConfig({
   ui: {
     // system fonts, no network fetch at build time
     fonts: false
+  },
+  i18n: {
+    strategy: 'no_prefix',
+    defaultLocale: 'en',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'stratamon_locale',
+      fallbackLocale: 'en'
+    },
+    locales: [
+      { code: 'en', language: 'en-US', file: 'en.json', name: 'English' },
+      { code: 'ru', language: 'ru-RU', file: 'ru.json', name: 'Русский' },
+      { code: 'de', language: 'de-DE', file: 'de.json', name: 'Deutsch' },
+      { code: 'es', language: 'es-ES', file: 'es.json', name: 'Español' },
+      { code: 'fr', language: 'fr-FR', file: 'fr.json', name: 'Français' },
+      { code: 'zh', language: 'zh-CN', file: 'zh.json', name: '中文' }
+    ]
   },
   devtools: { enabled: false },
   typescript: { strict: true },

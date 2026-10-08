@@ -15,6 +15,8 @@ const props = withDefaults(defineProps<{
   height?: number
 }>(), { unit: '', scale: 1, height: 190 })
 
+const { t } = useI18n()
+
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16']
 
 const el = ref<HTMLDivElement>()
@@ -137,13 +139,13 @@ onBeforeUnmount(() => {
     <template #header>
       <div class="flex items-baseline justify-between gap-2">
         <h3 class="text-sm font-semibold">{{ title }}</h3>
-        <span class="text-[10px] text-muted">drag to zoom · dbl-click to reset</span>
+        <span class="text-[10px] text-muted">{{ t('server.zoomHint') }}</span>
       </div>
     </template>
     <div class="relative">
       <div ref="el" @dblclick="resetZoom" />
       <div v-if="!hasData" class="absolute inset-0 flex items-center justify-center text-sm text-muted">
-        No data in this range
+        {{ t('server.noData') }}
       </div>
     </div>
   </UCard>

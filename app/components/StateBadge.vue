@@ -2,12 +2,13 @@
 import type { LiveServer } from '../plugins/live'
 
 const props = defineProps<{ server: LiveServer }>()
+const { t } = useI18n()
 
 const STATES: Record<string, { label: string, color: string, icon: string }> = {
-  unloaded: { label: 'Unloaded', color: 'neutral', icon: 'i-lucide-circle-dashed' },
-  idle: { label: 'Idle', color: 'info', icon: 'i-lucide-pause' },
-  reading: { label: 'Reading', color: 'warning', icon: 'i-lucide-download' },
-  generating: { label: 'Generating', color: 'success', icon: 'i-lucide-zap' }
+  unloaded: { label: 'state.unloaded', color: 'neutral', icon: 'i-lucide-circle-dashed' },
+  idle: { label: 'state.idle', color: 'info', icon: 'i-lucide-pause' },
+  reading: { label: 'state.reading', color: 'warning', icon: 'i-lucide-download' },
+  generating: { label: 'state.generating', color: 'success', icon: 'i-lucide-zap' }
 }
 
 const state = computed(() => {
@@ -32,7 +33,7 @@ function parseState (labels: string): string {
     icon="i-lucide-ban"
     size="sm"
   >
-    Disabled
+    {{ t('state.disabled') }}
   </UBadge>
   <UBadge
     v-else-if="state"
@@ -41,7 +42,7 @@ function parseState (labels: string): string {
     :icon="state.icon"
     size="sm"
   >
-    {{ state.label }}
+    {{ t(state.label) }}
   </UBadge>
   <UBadge
     v-else
@@ -50,6 +51,6 @@ function parseState (labels: string): string {
     icon="i-lucide-plug-zap"
     size="sm"
   >
-    Down
+    {{ t('state.down') }}
   </UBadge>
 </template>
