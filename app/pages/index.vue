@@ -15,7 +15,7 @@ const { servers, connected } = useLive()
         >
           {{ connected ? 'Live' : 'Polling' }}
         </UBadge>
-        <UButton to="/servers" color="neutral" variant="outline" size="sm" icon="i-lucide-plus">
+        <UButton to="/servers?add=1" color="neutral" variant="outline" size="sm" icon="i-lucide-plus">
           Add server
         </UButton>
       </div>
@@ -28,7 +28,7 @@ const { servers, connected } = useLive()
         Add a Strata engine by its base URL (e.g. <code>http://192.168.10.76:8000</code>) —
         metrics are read from <code>/metrics</code>.
       </p>
-      <UButton to="/servers" icon="i-lucide-plus">Add your first server</UButton>
+      <UButton to="/servers?add=1" icon="i-lucide-plus">Add your first server</UButton>
     </div>
 
     <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

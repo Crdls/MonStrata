@@ -27,6 +27,16 @@ function openAdd () {
   formOpen.value = true
 }
 
+// ?add=1 from the dashboard opens the form immediately
+const route = useRoute()
+const router = useRouter()
+onMounted(() => {
+  if (route.query.add) {
+    openAdd()
+    void router.replace({ query: { ...route.query, add: undefined } })
+  }
+})
+
 function openEdit (server: ServerRow) {
   editing.value = server
   form.name = server.name
