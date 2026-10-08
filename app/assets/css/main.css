@@ -1,10 +1,6 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-:root {
-  --ui-primary: emerald;
-}
-
-.dark {
-  --ui-primary: emerald;
-}
+/* Nuxt UI v4 default primary (emerald) is kept as-is.
+   To change colors use app.config `ui.colors`, not --ui-primary:
+   that variable must hold a concrete color value, not a palette name. */
