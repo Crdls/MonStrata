@@ -37,14 +37,19 @@ function isActive (to: string) {
             {{ item.label }}
           </NuxtLink>
         </nav>
-        <UButton
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          :icon="colorMode.preference === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
-          :aria-label="`Switch to ${colorMode.preference === 'dark' ? 'light' : 'dark'} mode`"
-          @click="colorMode.preference = colorMode.preference === 'dark' ? 'light' : 'dark'"
-        />
+        <ClientOnly>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            :icon="colorMode.preference === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
+            :aria-label="`Switch to ${colorMode.preference === 'dark' ? 'light' : 'dark'} mode`"
+            @click="colorMode.preference = colorMode.preference === 'dark' ? 'light' : 'dark'"
+          />
+          <template #fallback>
+            <div class="size-8" />
+          </template>
+        </ClientOnly>
       </div>
     </header>
     <main class="max-w-7xl mx-auto px-4 py-6">

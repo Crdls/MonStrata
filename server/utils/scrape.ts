@@ -103,11 +103,10 @@ function insertSamples (serverId: number, ts: number, rows: Array<[string, strin
   })(rows)
 }
 
-function groupMetrics (samples: Sample[]): Record<string, Array<[string, number]>> {
+function groupRows (rows: Array<[string, string, number]>): Record<string, Array<[string, number]>> {
   const out: Record<string, Array<[string, number]>> = {}
-  for (const s of samples) {
-    const labels = normalizeLabels(s.labels)
-    ;(out[s.metric] ??= []).push([labels, s.value])
+  for (const [metric, labels, value] of rows) {
+    ;(out[metric] ??= []).push([labels, value])
   }
   return out
 }
@@ -125,9 +124,10 @@ export async function scrapeServer (server: ServerRow): Promise<Snapshot> {
     const text = await res.text()
     const { samples } = parsePrometheus(text)
     if (samples.length === 0) throw new Error('response contained no samples')
-    insertSamples(server.id, now, buildRows(server.id, now, samples))
+    const rows = buildRows(server.id, now, samples)
+    insertSamples(server.id, now, rows)
     rt.prevTs.set(server.id, now)
-    snapshot = { serverId: server.id, ts: now, up: true, metrics: groupMetrics(samples) }
+    snapshot = { serverId: server.id, ts: now, up: true, metrics: groupRows(rows) }
   } catch (err) {
     snapshot = {
       serverId: server.id,
