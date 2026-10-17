@@ -9,6 +9,18 @@ import { runtime } from './runtime.ts'
  * This file is reachable from bare Node (via db.ts), keep relative imports
  * with explicit `.ts` extensions.
  */
+export interface GitlabAuth {
+  enabled: boolean
+  /** base URL of the GitLab server without a trailing slash, e.g. http://gitlab.lan */
+  baseUrl: string
+  clientId: string
+  clientSecret: string
+  /** OAuth callback override; empty = derived from the incoming request */
+  redirectUri: string
+  /** GitLab groups whose members may sign in (subgroups inherit); empty = any user */
+  allowedGroups: string[]
+}
+
 export interface AppConfig {
   db: {
     /** SQLite file; relative paths resolve from the project root (cwd) */
@@ -16,24 +28,52 @@ export interface AppConfig {
   }
   auth: {
     enabled: boolean
+    gitlab: GitlabAuth
   }
 }
 
 export const CONFIG_DEFAULTS: AppConfig = {
   db: { path: 'data/monstrata.db' },
-  auth: { enabled: false }
+  auth: {
+    enabled: false,
+    gitlab: { enabled: false, baseUrl: '', clientId: '', clientSecret: '', redirectUri: '', allowedGroups: [] }
+  }
 }
 
 export function configPath (): string {
   return process.env.MONSTRATA_CONFIG || resolve(process.cwd(), 'config.json')
 }
 
+function str (raw: unknown): string {
+  return typeof raw === 'string' ? raw.trim() : ''
+}
+
+function parseGitlab (raw: unknown): GitlabAuth {
+  const g = raw as Record<string, unknown> | undefined
+  return {
+    enabled: g?.enabled === true,
+    baseUrl: str(g?.baseUrl).replace(/\/+$/, ''),
+    clientId: str(g?.clientId),
+    clientSecret: str(g?.clientSecret),
+    redirectUri: str(g?.redirectUri),
+    allowedGroups: Array.isArray(g?.allowedGroups)
+      ? (g.allowedGroups as unknown[]).map(str).filter(s => s !== '')
+      : []
+  }
+}
+
+/** GitLab sign-in actually usable: auth on + gitlab on + all required fields set. */
+export function isGitlabReady (cfg: AppConfig): boolean {
+  const g = cfg.auth.gitlab
+  return cfg.auth.enabled && g.enabled && g.baseUrl !== '' && g.clientId !== '' && g.clientSecret !== ''
+}
+
 export function parseConfig (text: string | null): AppConfig {
   if (!text) return CONFIG_DEFAULTS
   try {
-    const raw = JSON.parse(text) as { db?: { path?: unknown }, auth?: { enabled?: unknown } }
+    const raw = JSON.parse(text) as { db?: { path?: unknown }, auth?: { enabled?: unknown, gitlab?: unknown } }
     const path = typeof raw?.db?.path === 'string' && raw.db.path.trim() ? raw.db.path.trim() : CONFIG_DEFAULTS.db.path
-    return { db: { path }, auth: { enabled: raw?.auth?.enabled === true } }
+    return { db: { path }, auth: { enabled: raw?.auth?.enabled === true, gitlab: parseGitlab(raw?.auth?.gitlab) } }
   } catch (err) {
     console.error('[monstrata] could not parse config.json, using defaults:', err)
     return CONFIG_DEFAULTS

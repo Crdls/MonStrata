@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { CONFIG_DEFAULTS, loadConfig } from '../server/utils/config.ts'
+import { CONFIG_DEFAULTS, isGitlabReady, loadConfig } from '../server/utils/config.ts'
 
 let failed = 0
 function check (name, cond) {
@@ -26,6 +26,23 @@ await write(JSON.stringify({ auth: { enabled: true } }))
 let cfg = loadConfig()
 check('auth.enabled from file', cfg.auth.enabled === true)
 check('missing db.path falls back to default', cfg.db.path === CONFIG_DEFAULTS.db.path)
+check('gitlab off by default', cfg.auth.gitlab.enabled === false && !isGitlabReady(cfg))
+
+await write(JSON.stringify({
+  auth: { enabled: true, gitlab: { enabled: true, baseUrl: 'http://gitlab.lan/', clientId: ' cid ', clientSecret: 'sec', allowedGroups: ['ops', '', 42] } }
+}))
+cfg = loadConfig()
+check('gitlab fields parsed', cfg.auth.gitlab.enabled === true && cfg.auth.gitlab.clientId === 'cid' && isGitlabReady(cfg))
+check('gitlab baseUrl trimmed of slashes', cfg.auth.gitlab.baseUrl === 'http://gitlab.lan')
+check('gitlab allowedGroups filtered to strings', JSON.stringify(cfg.auth.gitlab.allowedGroups) === '["ops"]')
+
+await write(JSON.stringify({ auth: { enabled: true, gitlab: { enabled: true, baseUrl: 'http://gitlab.lan', clientId: 'cid' } } }))
+cfg = loadConfig()
+check('gitlab without secret is not ready', !isGitlabReady(cfg))
+
+await write(JSON.stringify({ auth: { enabled: false, gitlab: { enabled: true, baseUrl: 'http://gitlab.lan', clientId: 'cid', clientSecret: 'sec' } } }))
+cfg = loadConfig()
+check('gitlab needs auth.enabled to be ready', !isGitlabReady(cfg))
 
 await write(JSON.stringify({ db: { path: 'x/other.db' }, auth: { enabled: false } }))
 cfg = loadConfig()

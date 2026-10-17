@@ -10,7 +10,8 @@
     "cancel": "Cancelar",
     "save": "Guardar",
     "live": "En vivo",
-    "polling": "Sondeo"
+    "polling": "Sondeo",
+    "or": "o"
   },
   "dashboard": {
     "title": "Panel",
@@ -161,7 +162,12 @@
     "newPassword": "Nueva contraseña",
     "confirmNewPassword": "Confirmar nueva contraseña",
     "toastPasswordChanged": "Contraseña cambiada",
-    "toastPasswordFailed": "No se pudo cambiar la contraseña"
+    "toastPasswordFailed": "No se pudo cambiar la contraseña",
+    "gitlabSignIn": "Iniciar sesión con GitLab",
+    "gitlabFailed": "No se pudo iniciar sesión con GitLab, inténtalo de nuevo",
+    "gitlabForbidden": "Tu cuenta de GitLab no tiene permitido entrar aquí",
+    "setPassword": "Establecer contraseña",
+    "setPasswordHint": "Has iniciado sesión con GitLab y aún no tienes contraseña local. Define una para iniciar sesión también sin GitLab."
   },
   "metric": {
     "vllm:num_requests_running": "Peticiones activas",

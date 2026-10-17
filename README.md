@@ -20,6 +20,9 @@ dashboard, metric history and a load heatmap with selectable period.
   per browser (cookie).
 - **Settings** — poller interval and rollup interval (30 s by default),
   retention depth for raw data and hourly aggregates. Applied on the fly.
+- **Theme** — light / dark / system: quick toggle in the header or a
+  selector in Settings; accent and neutral palettes selectable in
+  Settings; stored per browser (localStorage).
 - **i18n** — UI in English, Russian, German, Spanish, French and Chinese;
   language is detected from the browser and switched in the header
   (stored in the `monstrata_locale` cookie). Strings live in
@@ -28,7 +31,8 @@ dashboard, metric history and a load heatmap with selectable period.
 - **Optional authentication** — enable `auth.enabled` in `config.json`;
   accounts live in SQLite with scrypt-hashed passwords and 30-day sliding
   sessions. With auth on and no users yet, the app opens a first-run screen
-  to create the admin account.
+  to create the admin account. Users can also sign in through a GitLab
+  server on the LAN (OAuth2, see [Authentication](#authentication)).
 
 ## Running
 
@@ -76,6 +80,42 @@ With auth enabled:
 - sign out in the header; the Settings page can change your own password
   (the current session stays signed in, others are signed out).
 
+### Sign in with GitLab
+
+Instead of (or next to) local passwords you can authenticate against a
+GitLab server on your LAN with OAuth2 (authorization code, scope
+`read_user`) — no extra service needed:
+
+1. In GitLab create an OAuth application (your profile → Applications, or
+   Admin Area → Applications to offer it to everyone) with the redirect URI
+   `http://<monstrata-host>:3003/api/auth/gitlab/callback` and the
+   `read_user` scope;
+2. put the application id/secret into `config.json`:
+
+```json
+"auth": {
+  "enabled": true,
+  "gitlab": {
+    "enabled": true,
+    "baseUrl": "http://gitlab.lan",
+    "clientId": "…",
+    "clientSecret": "…",
+    "allowedGroups": []
+  }
+}
+```
+
+- the login page gains a "Sign in with GitLab" button;
+- the first GitLab sign-in creates a local user with the same username and
+  no password — that user can set a local password in Settings (the card
+  asks for a new password only, no current one) to keep signing in when
+  GitLab is down;
+- `allowedGroups` (optional) restricts sign-in to members of those GitLab
+  groups; members of subgroups count too; an empty list lets any GitLab
+  user of that server sign in;
+- `redirectUri` (optional) overrides the callback URL derived from the
+  request — you only need it behind a reverse proxy that rewrites the host.
+
 Lost password? On the server, from the project root (no email involved,
 the server may keep running):
 
@@ -109,7 +149,7 @@ i18n/locales/   dictionaries: en, ru, de, es, fr, zh
 server/
   middleware/   auth.ts - session gate for /api (opt-in via config.json)
   utils/        Prometheus parser, SQLite, metric catalog, scraper, rollups,
-                auth primitives
+                auth primitives, GitLab OAuth helpers
   plugins/      background loops (scrape, rollups)
   api/          servers CRUD, live, range, heatmap, settings, auth
   routes/_ws.ts WebSocket endpoint
@@ -124,7 +164,7 @@ test/           parser test on real /metrics fixtures + auth helper tests
 - `GET /api/range?serverId&metric&from&to` — metric history (raw/hourly/daily — the source is picked automatically)
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — servers × buckets matrix
 - `GET|PUT /api/settings`
-- `/api/auth/status|setup|login|logout|password` — auth (public: status, setup, login, logout)
+- `/api/auth/status|setup|login|logout|password`, `/api/auth/gitlab/start|callback` — auth (public: status, setup, login, logout, gitlab/*)
 - `WS /_ws` — push snapshots
 
 ## Tests

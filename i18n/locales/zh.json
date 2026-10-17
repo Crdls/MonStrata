@@ -10,7 +10,8 @@
     "cancel": "取消",
     "save": "保存",
     "live": "实时",
-    "polling": "轮询"
+    "polling": "轮询",
+    "or": "或"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -161,7 +162,12 @@
     "newPassword": "新密码",
     "confirmNewPassword": "确认新密码",
     "toastPasswordChanged": "密码已更改",
-    "toastPasswordFailed": "无法更改密码"
+    "toastPasswordFailed": "无法更改密码",
+    "gitlabSignIn": "使用 GitLab 登录",
+    "gitlabFailed": "通过 GitLab 登录失败，请重试",
+    "gitlabForbidden": "您的 GitLab 账户无权登录此处",
+    "setPassword": "设置密码",
+    "setPasswordHint": "您通过 GitLab 登录，尚未设置本地密码。设置后即可在不依赖 GitLab 的情况下登录。"
   },
   "metric": {
     "vllm:num_requests_running": "运行中请求",

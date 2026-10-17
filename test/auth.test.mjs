@@ -3,6 +3,9 @@
 import {
   cookieValue, hashPassword, hashToken, isPasswordValid, normalizeUsername, verifyPassword
 } from '../server/utils/credentials.ts'
+import {
+  authorizeUrl, isGroupAllowed, newOAuthState, pathsFromGroupsResponse, tokenFromResponse, usernameFromUserResponse
+} from '../server/utils/gitlab.ts'
 
 let failed = 0
 function check (name, cond) {
@@ -37,6 +40,25 @@ check('normalizeUsername rejects empty', normalizeUsername('   ') === null)
 check('normalizeUsername rejects long', normalizeUsername('x'.repeat(65)) === null)
 check('normalizeUsername rejects non-string', normalizeUsername(42) === null)
 check('isPasswordValid bounds', isPasswordValid('12345678') && !isPasswordValid('1234567') && !isPasswordValid('x'.repeat(1025)) && !isPasswordValid(42))
+
+const gl = { enabled: true, baseUrl: 'http://gitlab.lan', clientId: 'cid', clientSecret: 'sec', redirectUri: '', allowedGroups: [] }
+const state = newOAuthState()
+check('oauth state looks random and url-safe', /^[A-Za-z0-9_-]{30,}$/.test(state) && state !== newOAuthState())
+const authUrl = new URL(authorizeUrl(gl, 'http://mon:3003/api/auth/gitlab/callback', state))
+check('authorizeUrl targets the gitlab server', authUrl.origin === 'http://gitlab.lan' && authUrl.pathname === '/oauth/authorize')
+check('authorizeUrl carries oauth params', authUrl.searchParams.get('client_id') === 'cid' && authUrl.searchParams.get('response_type') === 'code' && authUrl.searchParams.get('state') === state && authUrl.searchParams.get('scope') === 'read_user' && authUrl.searchParams.get('redirect_uri') === 'http://mon:3003/api/auth/gitlab/callback')
+
+check('tokenFromResponse reads access_token', tokenFromResponse('{"access_token":"tok-1","token_type":"bearer"}') === 'tok-1')
+check('tokenFromResponse rejects garbage and empties', tokenFromResponse('nope') === null && tokenFromResponse('{"error":"x"}') === null)
+check('usernameFromUserResponse reads username', usernameFromUserResponse('{"username":"iva"}') === 'iva')
+check('usernameFromUserResponse rejects garbage', usernameFromUserResponse('<html>') === null)
+check('pathsFromGroupsResponse lowercases paths', JSON.stringify(pathsFromGroupsResponse('[{"full_path":"Ops/Api"},{"full_path":"Dev"}]')) === '["ops/api","dev"]')
+check('pathsFromGroupsResponse rejects non-list', pathsFromGroupsResponse('{"a":1}').length === 0)
+
+check('isGroupAllowed matches exact group', isGroupAllowed(['ops'], ['ops', 'dev']))
+check('isGroupAllowed inherits from subgroup', isGroupAllowed(['ops'], ['ops/api']))
+check('isGroupAllowed is case-insensitive', isGroupAllowed(['Ops'], ['ops']))
+check('isGroupAllowed rejects outsiders', !isGroupAllowed(['ops'], ['dev']) && !isGroupAllowed(['ops'], ['opos']) && !isGroupAllowed(['ops'], []))
 
 console.log(failed === 0 ? '\nAll checks passed' : `\n${failed} checks FAILED`)
 process.exit(failed === 0 ? 0 : 1)

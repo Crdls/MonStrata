@@ -5,14 +5,21 @@ import {
   countUsers, createSession, deleteSession, deleteUserSessions, extendSession,
   getSessionUser, purgeExpiredSessions
 } from './db'
-import { loadConfig } from './config'
+import { loadConfig, isGitlabReady } from './config'
 import { runtime } from './runtime'
 
 // re-export the primitives so auth consumers do not need two imports
 export { SESSION_COOKIE, SESSION_TTL_MS, hashPassword, hashToken, cookieValue, verifyPassword, isPasswordValid, normalizeUsername } from './credentials'
 
+export interface AuthUser {
+  id: number
+  username: string
+  /** false for GitLab-created users who have not set a local password yet */
+  hasPassword: boolean
+}
+
 export interface VerifiedSession {
-  user: { id: number, username: string }
+  user: AuthUser
   tokenHash: string
   /** expiry was slid — the cookie should be re-sent to refresh its Max-Age */
   refreshed: boolean
@@ -36,7 +43,11 @@ export function verifySessionToken (token: string | null | undefined): VerifiedS
   }
   // opportunistic cleanup, cheap enough to run sporadically
   if (Math.random() < 0.02) purgeExpiredSessions(now)
-  return { user: { id: row.user_id, username: row.username }, tokenHash, refreshed }
+  return {
+    user: { id: row.user_id, username: row.username, hasPassword: row.pass_hash !== '' },
+    tokenHash,
+    refreshed
+  }
 }
 
 export function setSessionCookie (event: NitroEvent, token: string): void {
@@ -68,11 +79,16 @@ export function endSession (event: NitroEvent): void {
  */
 export function authStatus (
   event: NitroEvent,
-  signedInAs?: { id: number, username: string } | null
-): { authEnabled: boolean, hasUsers: boolean, user: { id: number, username: string } | null } {
+  signedInAs?: AuthUser | null
+): { authEnabled: boolean, gitlabEnabled: boolean, hasUsers: boolean, user: AuthUser | null } {
   const cfg = loadConfig()
   const session = signedInAs ?? (cfg.auth.enabled ? verifySessionToken(getCookie(event, SESSION_COOKIE))?.user ?? null : null)
-  return { authEnabled: cfg.auth.enabled, hasUsers: countUsers() > 0, user: session ?? null }
+  return {
+    authEnabled: cfg.auth.enabled,
+    gitlabEnabled: isGitlabReady(cfg),
+    hasUsers: countUsers() > 0,
+    user: session ?? null
+  }
 }
 
 // ---------- login throttle (slows down password guessing) ----------

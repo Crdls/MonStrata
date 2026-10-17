@@ -15,6 +15,18 @@ const error = ref('')
 const busy = ref(false)
 const mismatch = computed(() => mode.value === 'setup' && form.confirm.length > 0 && form.confirm !== form.password)
 
+// GitLab callback failures land back here as /login?error=gitlab[-forbidden]
+const route = useRoute()
+const oauthError = computed(() => {
+  const err = String(route.query.error ?? '')
+  return err === 'gitlab-forbidden' ? t('auth.gitlabForbidden')
+    : err === 'gitlab' ? t('auth.gitlabFailed') : ''
+})
+
+function signInWithGitlab () {
+  location.assign('/api/auth/gitlab/start')
+}
+
 // language names are shown in their own language on purpose
 const localeItems = [
   { value: 'en', label: 'English' },
@@ -95,6 +107,18 @@ async function submit () {
             {{ mode === 'setup' ? t('auth.createAccount') : t('auth.signInButton') }}
           </UButton>
         </form>
+
+        <template v-if="status?.gitlabEnabled">
+          <div v-if="oauthError" class="text-sm text-error mt-4">{{ oauthError }}</div>
+          <div v-if="!busy" class="flex items-center gap-3 my-4" aria-hidden="true">
+            <span class="h-px flex-1 bg-(--ui-border)" />
+            <span class="text-xs text-dimmed uppercase">{{ t('common.or') }}</span>
+            <span class="h-px flex-1 bg-(--ui-border)" />
+          </div>
+          <UButton color="neutral" variant="outline" block icon="i-lucide-gitlab" @click="signInWithGitlab">
+            {{ t('auth.gitlabSignIn') }}
+          </UButton>
+        </template>
       </UCard>
 
       <div class="flex items-center justify-center gap-2 mt-5">

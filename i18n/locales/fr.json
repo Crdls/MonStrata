@@ -10,7 +10,8 @@
     "cancel": "Annuler",
     "save": "Enregistrer",
     "live": "En direct",
-    "polling": "Sondage"
+    "polling": "Sondage",
+    "or": "ou"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -161,7 +162,12 @@
     "newPassword": "Nouveau mot de passe",
     "confirmNewPassword": "Confirmer le nouveau mot de passe",
     "toastPasswordChanged": "Mot de passe modifié",
-    "toastPasswordFailed": "Impossible de changer le mot de passe"
+    "toastPasswordFailed": "Impossible de changer le mot de passe",
+    "gitlabSignIn": "Se connecter avec GitLab",
+    "gitlabFailed": "Échec de connexion via GitLab, réessayez",
+    "gitlabForbidden": "Votre compte GitLab n'est pas autorisé ici",
+    "setPassword": "Définir le mot de passe",
+    "setPasswordHint": "Vous êtes connecté via GitLab sans mot de passe local. Définissez-en un pour vous connecter aussi sans GitLab."
   },
   "metric": {
     "vllm:num_requests_running": "Requêtes en cours",

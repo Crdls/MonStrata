@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
   const user = getUserById(userId)
   if (!user) throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   const body = await readBody<{ currentPassword?: string, newPassword?: string }>(event)
-  if (!user.pass_hash || !await verifyPassword(String(body?.currentPassword ?? ''), user.pass_hash)) {
+  // empty pass_hash (GitLab-created user): first-time setup, nothing to confirm
+  if (user.pass_hash && !await verifyPassword(String(body?.currentPassword ?? ''), user.pass_hash)) {
     throw createError({ statusCode: 401, statusMessage: 'Invalid username or password' })
   }
   if (!isPasswordValid(body?.newPassword)) throw createError({ statusCode: 400, statusMessage: 'password must be 8-1024 characters' })

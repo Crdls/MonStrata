@@ -10,7 +10,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "live": "Live",
-    "polling": "Polling"
+    "polling": "Polling",
+    "or": "or"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -161,7 +162,12 @@
     "newPassword": "New password",
     "confirmNewPassword": "Confirm new password",
     "toastPasswordChanged": "Password changed",
-    "toastPasswordFailed": "Could not change password"
+    "toastPasswordFailed": "Could not change password",
+    "gitlabSignIn": "Sign in with GitLab",
+    "gitlabFailed": "GitLab sign-in failed, please try again",
+    "gitlabForbidden": "Your GitLab account is not allowed to sign in here",
+    "setPassword": "Set password",
+    "setPasswordHint": "You signed in via GitLab and have no local password yet. Set one to also sign in without GitLab."
   },
   "metric": {
     "vllm:num_requests_running": "Running requests",

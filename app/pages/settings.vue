@@ -15,6 +15,8 @@ const { t } = useI18n()
 const { status } = useAuth()
 
 const authed = computed(() => Boolean(status.value?.authEnabled && status.value?.user))
+// GitLab sign-ins have no local password yet: the card turns into first-time setup
+const hasPassword = computed(() => status.value?.user?.hasPassword !== false)
 
 const form = reactive<Settings>({ scrapeIntervalS: 10, rollupIntervalS: 30, rawRetentionH: 48, hourlyRetentionD: 400 })
 watchEffect(() => {
@@ -120,10 +122,10 @@ const neutralColor = computed({
     </UCard>
 
     <UCard v-if="authed" class="mt-6">
-      <h2 class="text-base font-semibold mb-1">{{ t('auth.changePassword') }}</h2>
-      <p class="text-sm text-muted mb-4">{{ t('auth.changePasswordHint') }}</p>
+      <h2 class="text-base font-semibold mb-1">{{ hasPassword ? t('auth.changePassword') : t('auth.setPassword') }}</h2>
+      <p class="text-sm text-muted mb-4">{{ hasPassword ? t('auth.changePasswordHint') : t('auth.setPasswordHint') }}</p>
       <form class="space-y-5" @submit.prevent="changePassword">
-        <UFormField :label="t('auth.currentPassword')">
+        <UFormField v-if="hasPassword" :label="t('auth.currentPassword')">
           <UInput v-model="pwd.current" type="password" autocomplete="current-password" class="w-64" />
         </UFormField>
 
@@ -144,7 +146,7 @@ const neutralColor = computed({
 
         <div class="flex justify-end pt-2">
           <UButton type="submit" :loading="pwdSaving" :disabled="pwdMismatch">
-            {{ t('auth.changePassword') }}
+            {{ hasPassword ? t('auth.changePassword') : t('auth.setPassword') }}
           </UButton>
         </div>
       </form>

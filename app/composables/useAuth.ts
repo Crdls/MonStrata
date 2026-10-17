@@ -1,10 +1,13 @@
 export interface AuthUser {
   id: number
   username: string
+  /** false for GitLab-created users who have not set a local password yet */
+  hasPassword: boolean
 }
 
 export interface AuthStatus {
   authEnabled: boolean
+  gitlabEnabled: boolean
   hasUsers: boolean
   user: AuthUser | null
 }

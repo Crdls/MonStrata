@@ -10,7 +10,8 @@
     "cancel": "Отмена",
     "save": "Сохранить",
     "live": "Онлайн",
-    "polling": "Опрос"
+    "polling": "Опрос",
+    "or": "или"
   },
   "dashboard": {
     "title": "Дашборд",
@@ -161,7 +162,12 @@
     "newPassword": "Новый пароль",
     "confirmNewPassword": "Повторите новый пароль",
     "toastPasswordChanged": "Пароль изменён",
-    "toastPasswordFailed": "Не удалось изменить пароль"
+    "toastPasswordFailed": "Не удалось изменить пароль",
+    "gitlabSignIn": "Войти через GitLab",
+    "gitlabFailed": "Не удалось войти через GitLab, попробуйте ещё раз",
+    "gitlabForbidden": "Вашей учётной записи GitLab вход сюда не разрешён",
+    "setPassword": "Установить пароль",
+    "setPasswordHint": "Вы вошли через GitLab, локального пароля пока нет. Задайте его, чтобы входить и без GitLab."
   },
   "metric": {
     "vllm:num_requests_running": "Запросы в работе",

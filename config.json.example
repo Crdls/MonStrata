@@ -3,6 +3,14 @@
     "path": "data/monstrata.db"
   },
   "auth": {
-    "enabled": false
+    "enabled": false,
+    "gitlab": {
+      "enabled": false,
+      "baseUrl": "http://gitlab.lan",
+      "clientId": "",
+      "clientSecret": "",
+      "redirectUri": "",
+      "allowedGroups": []
+    }
   }
 }

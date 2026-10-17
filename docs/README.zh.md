@@ -19,6 +19,8 @@
   tok/s、队列、显存 %、功耗、命中率等）。时间范围和指标会在浏览器中记住（cookie）。
 - **设置** — 轮询间隔和汇总间隔（默认 30 秒）、
   原始数据和小时聚合的保留深度。修改后立即生效。
+- **主题** — 浅色 / 深色 / 跟随系统：页眉中快速切换或在设置中选择，
+  设置中还可选择强调色和中性色板，保存在浏览器中（localStorage）。
 - **国际化** — 界面支持英语、俄语、德语、西班牙语、法语和中文；
   语言根据浏览器自动检测，可在页眉切换
   （保存在 `monstrata_locale` cookie 中）。文案位于 `i18n/locales/*.json`，
@@ -26,6 +28,7 @@
 - **可选的身份验证** — 在 `config.json` 中开启 `auth.enabled`；
   账户存储在 SQLite 中，密码使用 scrypt 哈希，登录有效期 30 天并在使用时
   自动续期。开启验证且尚无任何用户时，应用会打开创建首个管理员账户的界面。
+  也可以通过局域网内的 GitLab 服务器登录（OAuth2，见下文「身份验证」）。
 
 ## 运行
 
@@ -70,6 +73,39 @@ node .output/server/index.mjs
 - 页眉可退出登录；在设置页面可修改自己的密码
   （当前会话保持登录，其他会话将被退出）。
 
+### 通过 GitLab 登录
+
+除了本地密码（或与其并存），还可以通过局域网内的 GitLab 服务器以 OAuth2
+（authorization code，scope `read_user`）认证 — 无需额外的 IdP 服务：
+
+1. 在 GitLab 中创建 OAuth 应用（个人档案 → 「应用」，或在 Admin Area →
+   「应用」中创建以供所有人使用），redirect URI 为
+   `http://<monstrata-主机>:3003/api/auth/gitlab/callback`，scope 选
+   `read_user`；
+2. 把应用的 id/secret 写入 `config.json`：
+
+```json
+"auth": {
+  "enabled": true,
+  "gitlab": {
+    "enabled": true,
+    "baseUrl": "http://gitlab.lan",
+    "clientId": "…",
+    "clientSecret": "…",
+    "allowedGroups": []
+  }
+}
+```
+
+- 登录页会出现「使用 GitLab 登录」按钮；
+- 首次通过 GitLab 登录时会自动创建同名本地用户（无密码）；该用户可在
+  设置页面设置本地密码（此时表单只要求新密码，不要求当前密码），以便在
+  GitLab 不可用时仍能登录；
+- `allowedGroups`（可选）只允许这些 GitLab 组的成员登录；子组成员同样
+  有效；留空则该 GitLab 的任何用户都可登录；
+- `redirectUri`（可选）覆盖从请求推导的 callback 地址 — 仅在会改写主机名的
+  reverse proxy 之后才需要。
+
 忘记密码？在服务器上、项目根目录执行（无需邮箱，服务器无需停止）：
 
 ```sh
@@ -101,7 +137,8 @@ app/            Vue 3 + Nuxt UI 前端
 i18n/locales/   语言词典：en、ru、de、es、fr、zh
 server/
   middleware/   auth.ts — /api 的会话关卡（由 config.json 开启）
-  utils/        Prometheus 解析器、SQLite、指标目录、采集器、汇总、认证原语
+  utils/        Prometheus 解析器、SQLite、指标目录、采集器、汇总、认证原语、
+                GitLab OAuth 辅助
   plugins/      后台循环（scrape、rollups）
   api/          servers CRUD、live、range、heatmap、settings、auth
   routes/_ws.ts WebSocket 端点
@@ -116,7 +153,7 @@ test/           基于真实 /metrics 固定数据的解析器测试 + 认证测
 - `GET /api/range?serverId&metric&from&to` — 指标历史（raw/hourly/daily — 数据源自动选择）
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — 服务器 × 时间桶矩阵
 - `GET|PUT /api/settings`
-- `/api/auth/status|setup|login|logout|password` — 身份验证（公开：status、setup、login、logout）
+- `/api/auth/status|setup|login|logout|password`、`/api/auth/gitlab/start|callback` — 身份验证（公开：status、setup、login、logout、gitlab/*）
 - `WS /_ws` — 推送快照
 
 ## 测试

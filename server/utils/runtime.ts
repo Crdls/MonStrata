@@ -27,6 +27,8 @@ interface Runtime {
   config?: { mtime: number, value: AppConfig }
   /** login throttle: key (ip) -> consecutive failures */
   authFails: Map<string, { fails: number, last: number }>
+  /** pending GitLab OAuth state nonce -> expiry ts (ms) */
+  gitlabStates: Map<string, number>
 }
 
 const g = globalThis as typeof globalThis & { __monstrata?: Runtime }
@@ -38,12 +40,14 @@ export function runtime (): Runtime {
       prevTs: new Map(),
       snapshots: new Map(),
       scraping: false,
-      authFails: new Map()
+      authFails: new Map(),
+      gitlabStates: new Map()
     }
   }
   const rt = g.__monstrata
   // a global created by an older module version (dev HMR) may miss newer fields
   if (!rt.authFails) rt.authFails = new Map()
+  if (!rt.gitlabStates) rt.gitlabStates = new Map()
   return rt
 }
 

@@ -26,6 +26,7 @@ export interface SessionUserRow {
   expires_at: number
   username: string
   role: string
+  pass_hash: string
 }
 
 export interface Settings {
@@ -187,7 +188,7 @@ export function createSession (tokenHash: string, userId: number, expiresAt: num
 
 export function getSessionUser (tokenHash: string): SessionUserRow | null {
   return useDb()
-    .prepare(`SELECT s.token_hash, s.user_id, s.expires_at, u.username, u.role
+    .prepare(`SELECT s.token_hash, s.user_id, s.expires_at, u.username, u.role, u.pass_hash
               FROM sessions s JOIN users u ON u.id = s.user_id
               WHERE s.token_hash = ?`)
     .get(tokenHash) as SessionUserRow | null

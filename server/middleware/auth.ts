@@ -6,7 +6,10 @@ import { loadConfig } from '../utils/config'
 // Pages are gated client/SSR-side by app/middleware/auth.global.ts; /_ws
 // checks the cookie in its own upgrade handler because middleware does not
 // run for WS upgrades.
-const OPEN_AUTH_PATHS = new Set(['/api/auth/status', '/api/auth/login', '/api/auth/setup', '/api/auth/logout'])
+const OPEN_AUTH_PATHS = new Set([
+  '/api/auth/status', '/api/auth/login', '/api/auth/setup', '/api/auth/logout',
+  '/api/auth/gitlab/start', '/api/auth/gitlab/callback'
+])
 
 export default defineEventHandler((event) => {
   if (!loadConfig().auth.enabled) return
