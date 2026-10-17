@@ -2,7 +2,6 @@
 import type { Locale } from '#i18n'
 
 const route = useRoute()
-const colorMode = useColorMode()
 const { status, signOut } = useAuth()
 const authUser = computed(() => (status.value?.authEnabled ? status.value.user : null))
 // use setLocale (not a direct locale write) so lazy messages are loaded
@@ -80,14 +79,14 @@ function isActive (to: string) {
         >
           <span class="hidden md:inline max-w-32 truncate">{{ authUser.username }}</span>
         </UButton>
+        <!-- ClientOnly + fallback: avoids the stale aria-label hydration
+             mismatch when the system theme differs from the SSR default -->
         <ClientOnly>
-          <UButton
+          <UColorModeButton
             color="neutral"
             variant="ghost"
             size="sm"
-            :icon="colorMode.preference === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
-            :aria-label="`Switch to ${colorMode.preference === 'dark' ? 'light' : 'dark'} mode`"
-            @click="colorMode.preference = colorMode.preference === 'dark' ? 'light' : 'dark'"
+            class="shrink-0"
           />
           <template #fallback>
             <div class="size-8" />

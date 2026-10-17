@@ -5,7 +5,6 @@ import type { AuthStatus } from '../composables/useAuth'
 definePageMeta({ layout: false })
 
 const { locale, setLocale, t } = useI18n()
-const colorMode = useColorMode()
 const { status } = useAuth()
 
 // no users yet -> first-run account creation, otherwise sign in
@@ -110,14 +109,7 @@ async function submit () {
           icon="i-lucide-languages"
         />
         <ClientOnly>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            :icon="colorMode.preference === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
-            :aria-label="`Switch to ${colorMode.preference === 'dark' ? 'light' : 'dark'} mode`"
-            @click="colorMode.preference = colorMode.preference === 'dark' ? 'light' : 'dark'"
-          />
+          <UColorModeButton color="neutral" variant="ghost" size="sm" />
           <template #fallback>
             <div class="size-8" />
           </template>

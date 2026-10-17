@@ -68,6 +68,24 @@ async function changePassword () {
     pwdSaving.value = false
   }
 }
+
+// theme colors: write straight into appConfig (the Nuxt UI colors plugin
+// regenerates the CSS variables) and persist the choice in localStorage
+const appConfig = useAppConfig()
+const accentColor = computed({
+  get: () => appConfig.ui.colors.primary,
+  set: (value: string) => {
+    appConfig.ui.colors.primary = value
+    storeTheme()
+  }
+})
+const neutralColor = computed({
+  get: () => appConfig.ui.colors.neutral,
+  set: (value: string) => {
+    appConfig.ui.colors.neutral = value
+    storeTheme()
+  }
+})
 </script>
 
 <template>
@@ -130,6 +148,46 @@ async function changePassword () {
           </UButton>
         </div>
       </form>
+    </UCard>
+
+    <UCard class="mt-6">
+      <h2 class="text-base font-semibold mb-1">{{ t('settings.appearance') }}</h2>
+      <p class="text-sm text-muted mb-4">{{ t('settings.appearanceHelp') }}</p>
+      <div class="space-y-5">
+        <UFormField :label="t('settings.colorMode')">
+          <UColorModeSelect class="w-48" :aria-label="t('settings.appearance')" />
+        </UFormField>
+
+        <UFormField :label="t('settings.accentColor')">
+          <div class="flex flex-wrap gap-2.5">
+            <button
+              v-for="s in primarySwatches"
+              :key="s.value"
+              type="button"
+              class="size-6 rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-primary"
+              :class="[s.class, accentColor === s.value ? 'ring-2 ring-offset-2 ring-offset-elevated ring-primary' : '']"
+              :aria-label="t(`settings.themeColor.${s.value}`)"
+              :aria-pressed="accentColor === s.value"
+              @click="accentColor = s.value"
+            />
+          </div>
+        </UFormField>
+
+        <UFormField :label="t('settings.neutralPalette')">
+          <div class="flex flex-wrap gap-2.5">
+            <button
+              v-for="s in neutralSwatches"
+              :key="s.value"
+              type="button"
+              class="size-6 rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-primary"
+              :class="[s.class, neutralColor === s.value ? 'ring-2 ring-offset-2 ring-offset-elevated ring-primary' : '']"
+              :aria-label="t(`settings.themeColor.${s.value}`)"
+              :aria-pressed="neutralColor === s.value"
+              @click="neutralColor = s.value"
+            />
+          </div>
+        </UFormField>
+      </div>
     </UCard>
   </div>
 </template>
