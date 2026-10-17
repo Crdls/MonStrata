@@ -3,6 +3,8 @@ import type { Locale } from '#i18n'
 
 const route = useRoute()
 const colorMode = useColorMode()
+const { status, signOut } = useAuth()
+const authUser = computed(() => (status.value?.authEnabled ? status.value.user : null))
 // use setLocale (not a direct locale write) so lazy messages are loaded
 // and the detectBrowserLanguage cookie is updated
 const { locale, setLocale, t } = useI18n()
@@ -66,6 +68,18 @@ function isActive (to: string) {
           :aria-label="t('nav.settings')"
           icon="i-lucide-languages"
         />
+        <UButton
+          v-if="authUser"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          icon="i-lucide-log-out"
+          :aria-label="t('auth.logout')"
+          class="shrink-0"
+          @click="signOut()"
+        >
+          <span class="hidden md:inline max-w-32 truncate">{{ authUser.username }}</span>
+        </UButton>
         <ClientOnly>
           <UButton
             color="neutral"

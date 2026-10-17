@@ -10,6 +10,23 @@ export interface ServerRow {
   created_at: number
 }
 
+export interface UserRow {
+  id: number
+  username: string
+  pass_hash: string
+  role: string
+  created_at: number
+  last_login: number | null
+}
+
+export interface SessionUserRow {
+  token_hash: string
+  user_id: number
+  expires_at: number
+  username: string
+  role: string
+}
+
 export interface Settings {
   scrapeIntervalS: number
   rollupIntervalS: number
@@ -42,6 +59,21 @@ CREATE TABLE IF NOT EXISTS server_status (
   up        INTEGER NOT NULL,
   error     TEXT
 );
+CREATE TABLE IF NOT EXISTS users (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  username   TEXT NOT NULL UNIQUE,
+  pass_hash  TEXT NOT NULL,
+  role       TEXT NOT NULL DEFAULT 'admin',
+  created_at INTEGER NOT NULL,
+  last_login INTEGER
+);
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id    INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions (user_id);
 CREATE TABLE IF NOT EXISTS samples (
   server_id INTEGER NOT NULL,
   ts        INTEGER NOT NULL,
@@ -111,4 +143,68 @@ export function saveSettings (patch: Partial<Settings>): Settings {
     if (patch[key] !== undefined) stmt.run(map[key], String(patch[key]))
   }
   return getSettings()
+}
+
+// ---------- users ----------
+
+export function countUsers (): number {
+  return (useDb().prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n
+}
+
+export function getUserById (id: number): UserRow | null {
+  return useDb().prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow | null
+}
+
+export function getUserByUsername (username: string): UserRow | null {
+  return useDb().prepare('SELECT * FROM users WHERE username = ?').get(username) as UserRow | null
+}
+
+export function createUser (username: string, passHash: string): UserRow {
+  const info = useDb()
+    .prepare('INSERT INTO users (username, pass_hash, role, created_at) VALUES (?, ?, ?, ?)')
+    .run(username, passHash, 'admin', Date.now())
+  return getUserById(Number(info.lastInsertRowid))!
+}
+
+export function updatePassword (userId: number, passHash: string): void {
+  useDb().prepare('UPDATE users SET pass_hash = ? WHERE id = ?').run(passHash, userId)
+}
+
+export function touchLastLogin (userId: number): void {
+  useDb().prepare('UPDATE users SET last_login = ? WHERE id = ?').run(Date.now(), userId)
+}
+
+// ---------- sessions ----------
+
+export function createSession (tokenHash: string, userId: number, expiresAt: number): void {
+  useDb()
+    .prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)')
+    .run(tokenHash, userId, Date.now(), expiresAt)
+}
+
+export function getSessionUser (tokenHash: string): SessionUserRow | null {
+  return useDb()
+    .prepare(`SELECT s.token_hash, s.user_id, s.expires_at, u.username, u.role
+              FROM sessions s JOIN users u ON u.id = s.user_id
+              WHERE s.token_hash = ?`)
+    .get(tokenHash) as SessionUserRow | null
+}
+
+export function extendSession (tokenHash: string, expiresAt: number): void {
+  useDb().prepare('UPDATE sessions SET expires_at = ? WHERE token_hash = ?').run(expiresAt, tokenHash)
+}
+
+export function deleteSession (tokenHash: string): void {
+  useDb().prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenHash)
+}
+
+/** Sign a user's sessions out; pass `exceptTokenHash` to keep the current one. */
+export function deleteUserSessions (userId: number, exceptTokenHash: string | null = null): void {
+  useDb()
+    .prepare('DELETE FROM sessions WHERE user_id = ? AND (? IS NULL OR token_hash <> ?)')
+    .run(userId, exceptTokenHash, exceptTokenHash)
+}
+
+export function purgeExpiredSessions (now: number): void {
+  useDb().prepare('DELETE FROM sessions WHERE expires_at <= ?').run(now)
 }

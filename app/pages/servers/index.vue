@@ -10,7 +10,10 @@ interface ServerRow {
   error: string | null
 }
 
-const { data: servers, refresh } = useFetch<ServerRow[]>('/api/servers')
+const { data: servers, refresh } = useFetch<ServerRow[]>('/api/servers', {
+  // forward cookies on the SSR-side call so the auth middleware lets it through
+  headers: useRequestHeaders(['cookie'])
+})
 const toast = useToast()
 const { t } = useI18n()
 

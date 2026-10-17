@@ -24,7 +24,10 @@ dashboard, metric history and a load heatmap with selectable period.
   (stored in the `stratamon_locale` cookie). Strings live in
   `i18n/locales/*.json`, a new language = one JSON file + an entry in
   `nuxt.config.ts`.
-- No authentication — the service is meant for a trusted local network.
+- **Optional authentication** — enable `auth.enabled` in `config.json`;
+  accounts live in SQLite with scrypt-hashed passwords and 30-day sliding
+  sessions. With auth on and no users yet, the app opens a first-run screen
+  to create the admin account.
 
 ## Running
 
@@ -42,6 +45,40 @@ node .output/server/index.mjs
 
 The database is a SQLite file `data/stratamon.db` (created automatically).
 The path can be overridden with the `STRATAMON_DB` variable.
+Optional system settings (`config.json`, e.g. enabling authentication)
+live in the project root — see [Authentication](#authentication).
+
+## Authentication
+
+System-level settings live in `config.json` next to the project root — copy
+`config.json.example` to `config.json` and set:
+
+```json
+{ "auth": { "enabled": true } }
+```
+
+The file is optional (absent = auth off) and edits apply without a restart.
+Unlike the Settings page, these switches intentionally require filesystem
+access — auth cannot be turned off from the web UI.
+
+With auth enabled:
+
+- no users yet → the app opens a first-run screen to create the admin account;
+- every API route and the WebSocket require the `stratamon_session` cookie
+  (HttpOnly, scrypt-hashed passwords in SQLite, sessions live 30 days and
+  slide on use);
+- sign out in the header; the Settings page can change your own password
+  (the current session stays signed in, others are signed out).
+
+Lost password? On the server, from the project root (no email involved,
+the server may keep running):
+
+```sh
+node scripts/reset-password.mjs --list
+node scripts/reset-password.mjs <username or id> [new password]
+```
+
+The reset signs all sessions of that user out.
 
 ## Data storage
 
@@ -59,16 +96,19 @@ TTFT / ITL / E2E, engine and memory busy percentages.
 
 ```
 app/            Vue 3 + Nuxt UI frontend
-  pages/        dashboard, server, heatmap, servers, settings
+  pages/        dashboard, server, heatmap, servers, settings, login
   components/   ServerCard, MetricChart (uPlot), LoadHeatmap, ...
   plugins/live.ts  shared state + WebSocket client
 i18n/locales/   dictionaries: en, ru, de, es, fr, zh
 server/
-  utils/        Prometheus parser, SQLite, metric catalog, scraper, rollups
+  middleware/   auth.ts - session gate for /api (opt-in via config.json)
+  utils/        Prometheus parser, SQLite, metric catalog, scraper, rollups,
+                auth primitives
   plugins/      background loops (scrape, rollups)
-  api/          servers CRUD, live, range, heatmap, settings
+  api/          servers CRUD, live, range, heatmap, settings, auth
   routes/_ws.ts WebSocket endpoint
-test/           parser test on real /metrics fixtures
+scripts/        reset-password.mjs - lost password recovery (no email)
+test/           parser test on real /metrics fixtures + auth helper tests
 ```
 
 ## API
@@ -78,12 +118,14 @@ test/           parser test on real /metrics fixtures
 - `GET /api/range?serverId&metric&from&to` — metric history (raw/hourly/daily — the source is picked automatically)
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — servers × buckets matrix
 - `GET|PUT /api/settings`
+- `/api/auth/status|setup|login|logout|password` — auth (public: status, setup, login, logout)
 - `WS /_ws` — push snapshots
 
 ## Tests
 
 ```sh
 node test/parse.test.mjs
+node test/auth.test.mjs
 ```
 
 ## Notes
@@ -99,5 +141,6 @@ node test/parse.test.mjs
     nor in production).
 - Strata's `/metrics` returns JSON without the `Accept: text/plain`
   header — the scraper always sends it.
-- No authentication: the service is for a trusted network and is not
-  exposed to the outside.
+- Authentication is off by default (the service is meant for a trusted local
+  network); when enabled, all `/api` routes except the auth bootstrap ones
+  and `/_ws` require a valid session cookie.

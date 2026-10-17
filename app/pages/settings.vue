@@ -6,9 +6,15 @@ interface Settings {
   hourlyRetentionD: number
 }
 
-const { data, refresh } = useFetch<Settings>('/api/settings')
+const { data, refresh } = useFetch<Settings>('/api/settings', {
+  // forward cookies on the SSR-side call so the auth middleware lets it through
+  headers: useRequestHeaders(['cookie'])
+})
 const toast = useToast()
 const { t } = useI18n()
+const { status } = useAuth()
+
+const authed = computed(() => Boolean(status.value?.authEnabled && status.value?.user))
 
 const form = reactive<Settings>({ scrapeIntervalS: 10, rollupIntervalS: 30, rawRetentionH: 48, hourlyRetentionD: 400 })
 watchEffect(() => {
@@ -31,6 +37,35 @@ async function save () {
     })
   } finally {
     saving.value = false
+  }
+}
+
+const pwd = reactive({ current: '', next: '', confirm: '' })
+const pwdSaving = ref(false)
+const pwdMismatch = computed(() => pwd.confirm.length > 0 && pwd.confirm !== pwd.next)
+
+async function changePassword () {
+  if (pwdSaving.value || pwdMismatch.value) return
+  pwdSaving.value = true
+  try {
+    await $fetch('/api/auth/password', {
+      method: 'POST',
+      body: { currentPassword: pwd.current, newPassword: pwd.next }
+    })
+    toast.add({ title: t('auth.toastPasswordChanged'), color: 'success' })
+    pwd.current = ''
+    pwd.next = ''
+    pwd.confirm = ''
+  } catch (err: unknown) {
+    const e = err as { statusMessage?: string, statusCode?: number, status?: number }
+    const code = e?.statusCode ?? e?.status
+    toast.add({
+      title: t('auth.toastPasswordFailed'),
+      description: code === 401 ? t('auth.invalid') : e?.statusMessage ?? String(err),
+      color: 'error'
+    })
+  } finally {
+    pwdSaving.value = false
   }
 }
 </script>
@@ -61,6 +96,37 @@ async function save () {
         <div class="flex justify-end pt-2">
           <UButton type="submit" :loading="saving">
             {{ t('common.save') }}
+          </UButton>
+        </div>
+      </form>
+    </UCard>
+
+    <UCard v-if="authed" class="mt-6">
+      <h2 class="text-base font-semibold mb-1">{{ t('auth.changePassword') }}</h2>
+      <p class="text-sm text-muted mb-4">{{ t('auth.changePasswordHint') }}</p>
+      <form class="space-y-5" @submit.prevent="changePassword">
+        <UFormField :label="t('auth.currentPassword')">
+          <UInput v-model="pwd.current" type="password" autocomplete="current-password" class="w-64" />
+        </UFormField>
+
+        <UFormField :label="t('auth.newPassword')" :help="t('auth.passwordHelp')">
+          <UInput v-model="pwd.next" type="password" autocomplete="new-password" class="w-64" />
+        </UFormField>
+
+        <UFormField :label="t('auth.confirmNewPassword')">
+          <UInput
+            v-model="pwd.confirm"
+            type="password"
+            autocomplete="new-password"
+            class="w-64"
+            :color="pwdMismatch ? 'error' : undefined"
+          />
+          <p v-if="pwdMismatch" class="text-xs text-error mt-1">{{ t('auth.mismatch') }}</p>
+        </UFormField>
+
+        <div class="flex justify-end pt-2">
+          <UButton type="submit" :loading="pwdSaving" :disabled="pwdMismatch">
+            {{ t('auth.changePassword') }}
           </UButton>
         </div>
       </form>

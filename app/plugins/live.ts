@@ -28,10 +28,22 @@ export default defineNuxtPlugin(() => {
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
   let pollTimer: ReturnType<typeof setInterval> | undefined
 
+  function isUnauthorized (err: unknown) {
+    const e = err as { statusCode?: number, status?: number }
+    return (e?.statusCode ?? e?.status) === 401
+  }
+
+  function goToLogin () {
+    // the plugin also runs on /login itself - never redirect in a loop there
+    if (!import.meta.client || location.pathname.startsWith('/login')) return
+    location.assign('/login')
+  }
+
   async function refresh () {
     try {
       servers.value = await $fetch<LiveServer[]>('/api/live')
-    } catch {
+    } catch (err: unknown) {
+      if (isUnauthorized(err)) goToLogin()
       // server unreachable - keep whatever we have
     }
   }
@@ -54,9 +66,14 @@ export default defineNuxtPlugin(() => {
         else if (msg.type === 'removed') servers.value = servers.value.filter(s => s.id !== msg.serverId)
       } catch { /* ignore malformed frames */ }
     }
-    ws.onclose = () => {
+    ws.onclose = (ev: CloseEvent) => {
       connected.value = false
       ws = null
+      // closed by the server because the session cookie is missing/invalid
+      if (ev.code === 4401) {
+        goToLogin()
+        return
+      }
       reconnectTimer = setTimeout(connect, 3000)
     }
     ws.onerror = () => { ws?.close() }

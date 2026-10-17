@@ -8,7 +8,9 @@ const metric = ref('strata:gpu_util')
 
 const { data, pending, error } = await useFetch<HeatmapData>('/api/heatmap', {
   query: { period, metric },
-  watch: [period, metric]
+  watch: [period, metric],
+  // forward cookies on the SSR-side call so the auth middleware lets it through
+  headers: useRequestHeaders(['cookie'])
 })
 
 const periodItems = computed(() => [

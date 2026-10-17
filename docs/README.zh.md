@@ -23,7 +23,9 @@
   语言根据浏览器自动检测，可在页眉切换
   （保存在 `stratamon_locale` cookie 中）。文案位于 `i18n/locales/*.json`，
   新增语言 = 一个 JSON 文件 + `nuxt.config.ts` 中的一条配置。
-- 没有身份验证 — 本服务面向受信任的本地网络。
+- **可选的身份验证** — 在 `config.json` 中开启 `auth.enabled`；
+  账户存储在 SQLite 中，密码使用 scrypt 哈希，登录有效期 30 天并在使用时
+  自动续期。开启验证且尚无任何用户时，应用会打开创建首个管理员账户的界面。
 
 ## 运行
 
@@ -41,6 +43,38 @@ node .output/server/index.mjs
 
 数据库是 SQLite 文件 `data/stratamon.db`（自动创建）。
 可通过 `STRATAMON_DB` 环境变量覆盖路径。
+可选的系统设置（`config.json`，例如开启身份验证）位于项目根目录，
+见下文「身份验证」。
+
+## 身份验证
+
+系统设置位于项目根目录的 `config.json` — 将 `config.json.example`
+复制为 `config.json` 并设置：
+
+```json
+{ "auth": { "enabled": true } }
+```
+
+该文件是可选的（不存在 = 验证关闭），修改无需重启即可生效。
+与设置页面不同，这些开关有意要求文件系统访问权限 —
+无法从 Web 界面关闭身份验证。
+
+开启验证后：
+
+- 尚无任何用户 → 应用打开创建首个管理员账户的界面；
+- 所有 API 请求和 WebSocket 都需要 `stratamon_session` cookie
+  （HttpOnly，密码为 SQLite 中的 scrypt 哈希，会话有效期 30 天并在使用时续期）；
+- 页眉可退出登录；在设置页面可修改自己的密码
+  （当前会话保持登录，其他会话将被退出）。
+
+忘记密码？在服务器上、项目根目录执行（无需邮箱，服务器无需停止）：
+
+```sh
+node scripts/reset-password.mjs --list
+node scripts/reset-password.mjs <用户名或 id> [新密码]
+```
+
+重置会退出该用户的所有会话。
 
 ## 数据存储
 
@@ -58,16 +92,18 @@ node .output/server/index.mjs
 
 ```
 app/            Vue 3 + Nuxt UI 前端
-  pages/        仪表盘、服务器详情、热力图、服务器列表、设置
+  pages/        仪表盘、服务器详情、热力图、服务器列表、设置、登录
   components/   ServerCard、MetricChart (uPlot)、LoadHeatmap 等
   plugins/live.ts  共享状态 + WebSocket 客户端
 i18n/locales/   语言词典：en、ru、de、es、fr、zh
 server/
-  utils/        Prometheus 解析器、SQLite、指标目录、采集器、汇总
+  middleware/   auth.ts — /api 的会话关卡（由 config.json 开启）
+  utils/        Prometheus 解析器、SQLite、指标目录、采集器、汇总、认证原语
   plugins/      后台循环（scrape、rollups）
-  api/          servers CRUD、live、range、heatmap、settings
+  api/          servers CRUD、live、range、heatmap、settings、auth
   routes/_ws.ts WebSocket 端点
-test/           基于真实 /metrics 固定数据的解析器测试
+scripts/        reset-password.mjs — 密码恢复（无需邮箱）
+test/           基于真实 /metrics 固定数据的解析器测试 + 认证测试
 ```
 
 ## API
@@ -77,12 +113,14 @@ test/           基于真实 /metrics 固定数据的解析器测试
 - `GET /api/range?serverId&metric&from&to` — 指标历史（raw/hourly/daily — 数据源自动选择）
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — 服务器 × 时间桶矩阵
 - `GET|PUT /api/settings`
+- `/api/auth/status|setup|login|logout|password` — 身份验证（公开：status、setup、login、logout）
 - `WS /_ws` — 推送快照
 
 ## 测试
 
 ```sh
 node test/parse.test.mjs
+node test/auth.test.mjs
 ```
 
 ## 备注
@@ -97,4 +135,5 @@ node test/parse.test.mjs
     WebSocket 升级挂载（否则 `/_ws` 在开发和生产环境都无法工作）。
 - 若没有 `Accept: text/plain` 请求头，Strata 的 `/metrics`
   会返回 JSON — 采集器始终发送该请求头。
-- 没有身份验证：本服务面向受信任的网络，不对外暴露。
+- 身份验证默认关闭（本服务面向受信任的本地网络）；开启后，除认证引导接口外，
+  所有 `/api` 和 `/_ws` 都需要有效的会话 cookie。
