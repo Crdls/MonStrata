@@ -15,7 +15,7 @@
   以及主机 CPU 和内存。通过 WebSocket 更新，并支持轮询回退。
 - **历史** — 按服务器查看 1 小时 / 6 小时 / 24 小时 / 7 天 / 30 天图表。
 - **热力图** — 所有服务器按时间桶的负载，
-  时间范围 24 小时 / 7 天 / 30 天 / 一年，可选指标（GPU 利用率、CPU、
+  时间范围 1 / 3 / 12 / 24 小时 / 7 天 / 30 天 / 一年，可选指标（GPU 利用率、CPU、
   tok/s、队列、显存 %、功耗、命中率等）。
 - **设置** — 轮询间隔和汇总间隔（默认 30 秒）、
   原始数据和小时聚合的保留深度。修改后立即生效。
@@ -75,7 +75,7 @@ test/           基于真实 /metrics 固定数据的解析器测试
 - `GET|POST /api/servers`、`PATCH|DELETE /api/servers/:id`、`POST /api/servers/:id/ping`
 - `GET /api/live` — 所有服务器的当前快照
 - `GET /api/range?serverId&metric&from&to` — 指标历史（raw/hourly/daily — 数据源自动选择）
-- `GET /api/heatmap?metric&period=24h|7d|30d|1y` — 服务器 × 时间桶矩阵
+- `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — 服务器 × 时间桶矩阵
 - `GET|PUT /api/settings`
 - `WS /_ws` — 推送快照
 

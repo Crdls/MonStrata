@@ -90,6 +90,9 @@
   "heatmap": {
     "title": "Carte thermique de charge",
     "subtitle": "Charge moyenne par intervalle, par serveur",
+    "period1h": "Dernière heure",
+    "period3h": "Dernières 3 heures",
+    "period12h": "Dernières 12 heures",
     "period24h": "Dernières 24 heures",
     "period7d": "7 derniers jours",
     "period30d": "30 derniers jours",
@@ -107,7 +110,7 @@
     "rollup": "Intervalle d'agrégation (secondes)",
     "rollupHelp": "Fréquence de downsampling des échantillons bruts en agrégats horaires/journaliers et de purge. 5–3600.",
     "rawRetention": "Rétention des données brutes (heures)",
-    "rawRetentionHelp": "Les échantillons plus anciens sont supprimés. Affecte la carte 24 h et les plages courtes. 1–720.",
+    "rawRetentionHelp": "Les échantillons plus anciens sont supprimés. Affecte les cartes de 1–24 h et les plages courtes. 1–720.",
     "hourlyRetention": "Rétention des agrégats horaires (jours)",
     "hourlyRetentionHelp": "Les agrégats horaires plus anciens sont supprimés. Les quotidiens sont conservés. 7–3650.",
     "toastSaved": "Réglages enregistrés",

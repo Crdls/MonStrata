@@ -90,6 +90,9 @@
   "heatmap": {
     "title": "负载热力图",
     "subtitle": "按时间桶统计的各服务器平均负载",
+    "period1h": "最近 1 小时",
+    "period3h": "最近 3 小时",
+    "period12h": "最近 12 小时",
     "period24h": "最近 24 小时",
     "period7d": "最近 7 天",
     "period30d": "最近 30 天",
@@ -107,7 +110,7 @@
     "rollup": "汇总间隔（秒）",
     "rollupHelp": "将原始采样降采样为小时/天聚合并清理旧数据的频率，5–3600。",
     "rawRetention": "原始数据保留（小时）",
-    "rawRetentionHelp": "更早的原始采样将被删除，影响 24 小时热力图和短期图表，1–720。",
+    "rawRetentionHelp": "更早的原始采样将被删除，影响 1–24 小时热力图和短期图表，1–720。",
     "hourlyRetention": "小时聚合保留（天）",
     "hourlyRetentionHelp": "更早的小时聚合将被删除，天级聚合永久保留，7–3650。",
     "toastSaved": "设置已保存",

@@ -15,7 +15,7 @@ dashboard, metric history and a load heatmap with selectable period.
   plus host CPU and RAM. Updates over WebSocket with a polling fallback.
 - **History** — charts per server for 1h / 6h / 24h / 7d / 30d.
 - **Heatmap** — load of all servers by time buckets, periods of
-  24h / 7d / 30d / year, selectable metric (GPU util, CPU, tok/s,
+  1h / 3h / 12h / 24h / 7d / 30d / year, selectable metric (GPU util, CPU, tok/s,
   queue, VRAM %, power, hit rate, etc.).
 - **Settings** — poller interval and rollup interval (30 s by default),
   retention depth for raw data and hourly aggregates. Applied on the fly.
@@ -76,7 +76,7 @@ test/           parser test on real /metrics fixtures
 - `GET|POST /api/servers`, `PATCH|DELETE /api/servers/:id`, `POST /api/servers/:id/ping`
 - `GET /api/live` — current snapshots of all servers
 - `GET /api/range?serverId&metric&from&to` — metric history (raw/hourly/daily — the source is picked automatically)
-- `GET /api/heatmap?metric&period=24h|7d|30d|1y` — servers × buckets matrix
+- `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — servers × buckets matrix
 - `GET|PUT /api/settings`
 - `WS /_ws` — push snapshots
 

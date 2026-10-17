@@ -90,6 +90,9 @@
   "heatmap": {
     "title": "Mapa de calor de carga",
     "subtitle": "Carga media por bucket temporal, por servidor",
+    "period1h": "Última hora",
+    "period3h": "Últimas 3 horas",
+    "period12h": "Últimas 12 horas",
     "period24h": "Últimas 24 horas",
     "period7d": "Últimos 7 días",
     "period30d": "Últimos 30 días",
@@ -107,7 +110,7 @@
     "rollup": "Intervalo de rollup (segundos)",
     "rollupHelp": "Cada cuánto las muestras crudas se agregan por hora/día y se podan. 5–3600.",
     "rawRetention": "Retención de datos crudos (horas)",
-    "rawRetentionHelp": "Las muestras más antiguas se eliminan. Afecta al mapa de 24 h y rangos cortos. 1–720.",
+    "rawRetentionHelp": "Las muestras más antiguas se eliminan. Afecta a los mapas de 1–24 h y rangos cortos. 1–720.",
     "hourlyRetention": "Retención de rollups horarios (días)",
     "hourlyRetentionHelp": "Los agregados horarios más antiguos se eliminan. Los diarios se conservan. 7–3650.",
     "toastSaved": "Ajustes guardados",

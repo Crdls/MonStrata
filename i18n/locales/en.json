@@ -90,6 +90,9 @@
   "heatmap": {
     "title": "Load heatmap",
     "subtitle": "Average load per time bucket, per server",
+    "period1h": "Last hour",
+    "period3h": "Last 3 hours",
+    "period12h": "Last 12 hours",
     "period24h": "Last 24 hours",
     "period7d": "Last 7 days",
     "period30d": "Last 30 days",
@@ -107,7 +110,7 @@
     "rollup": "Rollup interval (seconds)",
     "rollupHelp": "How often raw samples are downsampled into hourly/daily aggregates and old raw data is pruned. 5–3600.",
     "rawRetention": "Raw data retention (hours)",
-    "rawRetentionHelp": "Raw samples older than this are deleted. Drives the 24h heatmap and short-range charts. 1–720.",
+    "rawRetentionHelp": "Raw samples older than this are deleted. Drives the 1h–24h heatmaps and short-range charts. 1–720.",
     "hourlyRetention": "Hourly rollup retention (days)",
     "hourlyRetentionHelp": "Hourly aggregates older than this are deleted. Daily aggregates are kept forever. 7–3650.",
     "toastSaved": "Settings saved",

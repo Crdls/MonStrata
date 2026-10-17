@@ -1,10 +1,14 @@
 import { useDb, type ServerRow } from '../utils/db'
 import { HEATMAP_METRICS, metricDef } from '../utils/metrics'
 
+const MIN = 60_000
 const HOUR = 3_600_000
 const DAY = 86_400_000
 
 const PERIODS: Record<string, { span: number, bucket: number, source: 'raw' | 'hourly' | 'daily' }> = {
+  '1h': { span: HOUR, bucket: 2 * MIN, source: 'raw' },
+  '3h': { span: 3 * HOUR, bucket: 10 * MIN, source: 'raw' },
+  '12h': { span: 12 * HOUR, bucket: 30 * MIN, source: 'raw' },
   '24h': { span: 24 * HOUR, bucket: HOUR, source: 'raw' },
   '7d': { span: 7 * DAY, bucket: HOUR, source: 'hourly' },
   '30d': { span: 30 * DAY, bucket: 6 * HOUR, source: 'hourly' },

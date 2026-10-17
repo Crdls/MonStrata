@@ -15,7 +15,7 @@ Web-мониторинг движков инференса **Strata**: неск�
   CPU и RAM хоста. Обновление по WebSocket с fallback на polling.
 - **История** — графики по каждому серверу за 1h / 6h / 24h / 7d / 30d.
 - **Тепловая карта** — загрузка всех серверов по бакетам времени,
-  периоды 24ч / 7д / 30д / год, выбор метрики (GPU util, CPU, tok/s,
+  периоды 1ч / 3ч / 12ч / 24ч / 7д / 30д / год, выбор метрики (GPU util, CPU, tok/s,
   очередь, VRAM %, мощность, hit rate и др.).
 - **Настройки** — интервал поллера и интервал роллапа (по умолчанию 30 с),
   глубина хранения raw-данных и часовых агрегатов. Применяются на лету.
@@ -75,7 +75,7 @@ test/           тест парсера на реальных фикстурах
 - `GET|POST /api/servers`, `PATCH|DELETE /api/servers/:id`, `POST /api/servers/:id/ping`
 - `GET /api/live` — текущие снапшоты всех серверов
 - `GET /api/range?serverId&metric&from&to` — история метрики (raw/hourly/daily — источник выбирается сам)
-- `GET /api/heatmap?metric&period=24h|7d|30d|1y` — матрица серверы × бакеты
+- `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — матрица серверы × бакеты
 - `GET|PUT /api/settings`
 - `WS /_ws` — push-снапшоты
 

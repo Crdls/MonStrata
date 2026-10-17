@@ -12,6 +12,9 @@ const { data, pending, error } = await useFetch<HeatmapData>('/api/heatmap', {
 })
 
 const periodItems = computed(() => [
+  { label: t('heatmap.period1h'), value: '1h' },
+  { label: t('heatmap.period3h'), value: '3h' },
+  { label: t('heatmap.period12h'), value: '12h' },
   { label: t('heatmap.period24h'), value: '24h' },
   { label: t('heatmap.period7d'), value: '7d' },
   { label: t('heatmap.period30d'), value: '30d' },

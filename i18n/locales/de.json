@@ -90,6 +90,9 @@
   "heatmap": {
     "title": "Auslastungs-Heatmap",
     "subtitle": "Durchschnittliche Auslastung pro Zeitbucket, je Server",
+    "period1h": "Letzte Stunde",
+    "period3h": "Letzte 3 Stunden",
+    "period12h": "Letzte 12 Stunden",
     "period24h": "Letzte 24 Stunden",
     "period7d": "Letzte 7 Tage",
     "period30d": "Letzte 30 Tage",
@@ -107,7 +110,7 @@
     "rollup": "Rollup-Intervall (Sekunden)",
     "rollupHelp": "Wie oft Rohdaten zu Stunden-/Tagesaggregaten verdichtet und alte Daten gelöscht werden. 5–3600.",
     "rawRetention": "Rohdaten-Aufbewahrung (Stunden)",
-    "rawRetentionHelp": "Ältere Rohdaten werden gelöscht. Beeinflusst 24-h-Heatmap und kurze Bereiche. 1–720.",
+    "rawRetentionHelp": "Ältere Rohdaten werden gelöscht. Beeinflusst 1–24-h-Heatmaps und kurze Bereiche. 1–720.",
     "hourlyRetention": "Stunden-Rollups aufbewahren (Tage)",
     "hourlyRetentionHelp": "Ältere Stundenaggregate werden gelöscht. Tagesaggregate bleiben dauerhaft. 7–3650.",
     "toastSaved": "Einstellungen gespeichert",
