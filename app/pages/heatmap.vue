@@ -3,8 +3,17 @@ import type { HeatmapData } from '../components/LoadHeatmap.vue'
 
 const { t, te } = useI18n()
 
-const period = ref('24h')
-const metric = ref('strata:gpu_util')
+// view settings persist in cookies, so the saved period/metric is already
+// used on the SSR render of the next visit
+const YEAR = 60 * 60 * 24 * 365
+const period = useCookie<string>('monstrata_heatmap_period', {
+  default: () => '24h',
+  maxAge: YEAR
+})
+const metric = useCookie<string>('monstrata_heatmap_metric', {
+  default: () => 'strata:gpu_util',
+  maxAge: YEAR
+})
 
 const { data, pending, error } = await useFetch<HeatmapData>('/api/heatmap', {
   query: { period, metric },
@@ -12,6 +21,16 @@ const { data, pending, error } = await useFetch<HeatmapData>('/api/heatmap', {
   // forward cookies on the SSR-side call so the auth middleware lets it through
   headers: useRequestHeaders(['cookie'])
 })
+
+// the saved metric may no longer be in the catalog (e.g. after an update)
+function validateMetric () {
+  const available = data.value?.availableMetrics
+  if (!available?.length || available.some(m => m.value === metric.value)) return
+  const fallback = available.find(m => m.value === 'strata:gpu_util') ?? available[0]!
+  metric.value = fallback.value
+}
+onMounted(validateMetric)
+watch(data, validateMetric)
 
 const periodItems = computed(() => [
   { label: t('heatmap.period1h'), value: '1h' },

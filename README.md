@@ -16,7 +16,8 @@ dashboard, metric history and a load heatmap with selectable period.
 - **History** — charts per server for 1h / 6h / 24h / 7d / 30d.
 - **Heatmap** — load of all servers by time buckets, periods of
   1h / 3h / 12h / 24h / 7d / 30d / year, selectable metric (GPU util, CPU, tok/s,
-  queue, VRAM %, power, hit rate, etc.).
+  queue, VRAM %, power, hit rate, etc.). Period and metric are remembered
+  per browser (cookie).
 - **Settings** — poller interval and rollup interval (30 s by default),
   retention depth for raw data and hourly aggregates. Applied on the fly.
 - **i18n** — UI in English, Russian, German, Spanish, French and Chinese;
