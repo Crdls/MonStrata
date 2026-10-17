@@ -17,7 +17,7 @@ export function scheduleScrape () {
     try {
       await scrapeAll()
     } catch (err) {
-      console.error('[stratamon] scrape cycle failed:', err)
+      console.error('[monstrata] scrape cycle failed:', err)
     }
     scheduleScrape()
   }, ms)
@@ -32,7 +32,7 @@ export function scheduleRollups () {
     try {
       runRollups()
     } catch (err) {
-      console.error('[stratamon] rollup cycle failed:', err)
+      console.error('[monstrata] rollup cycle failed:', err)
     }
     scheduleRollups()
   }, ms)

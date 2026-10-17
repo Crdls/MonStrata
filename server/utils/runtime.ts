@@ -29,11 +29,11 @@ interface Runtime {
   authFails: Map<string, { fails: number, last: number }>
 }
 
-const g = globalThis as typeof globalThis & { __stratamon?: Runtime }
+const g = globalThis as typeof globalThis & { __monstrata?: Runtime }
 
 export function runtime (): Runtime {
-  if (!g.__stratamon) {
-    g.__stratamon = {
+  if (!g.__monstrata) {
+    g.__monstrata = {
       prev: new Map(),
       prevTs: new Map(),
       snapshots: new Map(),
@@ -41,7 +41,7 @@ export function runtime (): Runtime {
       authFails: new Map()
     }
   }
-  const rt = g.__stratamon
+  const rt = g.__monstrata
   // a global created by an older module version (dev HMR) may miss newer fields
   if (!rt.authFails) rt.authFails = new Map()
   return rt

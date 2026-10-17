@@ -119,7 +119,7 @@
   },
   "auth": {
     "signInTitle": "Sign in",
-    "signInHint": "Sign in to your StrataMon account.",
+    "signInHint": "Sign in to your MonStrata account.",
     "setupTitle": "Create the first account",
     "setupHint": "Authentication is enabled and no users exist yet. Create an admin account.",
     "username": "Username",

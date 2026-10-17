@@ -2,7 +2,7 @@
 import { de, en, es, fr, ru, zh_cn } from '@nuxt/ui/locale'
 
 useHead({
-  titleTemplate: (title?: string | null) => (title ? `${title} · StrataMon` : 'StrataMon')
+  titleTemplate: (title?: string | null) => (title ? `${title} · MonStrata` : 'MonStrata')
 })
 
 // keep Nuxt UI internal strings (modal close, select, input number, ...)

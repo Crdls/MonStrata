@@ -119,7 +119,7 @@
   },
   "auth": {
     "signInTitle": "Connexion",
-    "signInHint": "Connectez-vous à votre compte StrataMon.",
+    "signInHint": "Connectez-vous à votre compte MonStrata.",
     "setupTitle": "Créer le premier compte",
     "setupHint": "L'authentification est activée et aucun utilisateur n'existe encore. Créez un compte administrateur.",
     "username": "Nom d'utilisateur",

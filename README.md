@@ -1,4 +1,4 @@
-# StrataMon
+# MonStrata
 
 **English** · [Русский](docs/README.ru.md) · [中文](docs/README.zh.md)
 
@@ -21,7 +21,7 @@ dashboard, metric history and a load heatmap with selectable period.
   retention depth for raw data and hourly aggregates. Applied on the fly.
 - **i18n** — UI in English, Russian, German, Spanish, French and Chinese;
   language is detected from the browser and switched in the header
-  (stored in the `stratamon_locale` cookie). Strings live in
+  (stored in the `monstrata_locale` cookie). Strings live in
   `i18n/locales/*.json`, a new language = one JSON file + an entry in
   `nuxt.config.ts`.
 - **Optional authentication** — enable `auth.enabled` in `config.json`;
@@ -43,7 +43,7 @@ npm run build
 node .output/server/index.mjs
 ```
 
-The database is a SQLite file `data/stratamon.db` (created automatically).
+The database is a SQLite file `data/monstrata.db` (created automatically).
 Its path can be changed with `db.path` in `config.json` (applied at startup).
 System settings live in `config.json` in the project root — see
 [Authentication](#authentication).
@@ -55,12 +55,12 @@ System-level settings live in `config.json` next to the project root — copy
 
 ```json
 {
-  "db": { "path": "data/stratamon.db" },
+  "db": { "path": "data/monstrata.db" },
   "auth": { "enabled": true }
 }
 ```
 
-The file is optional (absent = defaults: `data/stratamon.db`, auth off).
+The file is optional (absent = defaults: `data/monstrata.db`, auth off).
 `auth.enabled` applies as soon as the file changes; `db.path` applies at
 startup — restart after changing it (relative paths resolve from the project
 root). Unlike the Settings page, these switches intentionally require
@@ -69,7 +69,7 @@ filesystem access — auth cannot be turned off from the web UI.
 With auth enabled:
 
 - no users yet → the app opens a first-run screen to create the admin account;
-- every API route and the WebSocket require the `stratamon_session` cookie
+- every API route and the WebSocket require the `monstrata_session` cookie
   (HttpOnly, scrypt-hashed passwords in SQLite, sessions live 30 days and
   slide on use);
 - sign out in the header; the Settings page can change your own password

@@ -59,7 +59,7 @@ async function submit () {
     <div class="w-full max-w-sm">
       <div class="flex items-center justify-center gap-2 font-semibold text-highlighted mb-6">
         <UIcon name="i-lucide-activity" class="size-6 text-primary" />
-        <span class="text-lg">StrataMon</span>
+        <span class="text-lg">MonStrata</span>
       </div>
 
       <UCard>

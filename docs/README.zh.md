@@ -1,4 +1,4 @@
-# StrataMon
+# MonStrata
 
 [English](../README.md) · [Русский](README.ru.md) · **中文**
 
@@ -21,7 +21,7 @@
   原始数据和小时聚合的保留深度。修改后立即生效。
 - **国际化** — 界面支持英语、俄语、德语、西班牙语、法语和中文；
   语言根据浏览器自动检测，可在页眉切换
-  （保存在 `stratamon_locale` cookie 中）。文案位于 `i18n/locales/*.json`，
+  （保存在 `monstrata_locale` cookie 中）。文案位于 `i18n/locales/*.json`，
   新增语言 = 一个 JSON 文件 + `nuxt.config.ts` 中的一条配置。
 - **可选的身份验证** — 在 `config.json` 中开启 `auth.enabled`；
   账户存储在 SQLite 中，密码使用 scrypt 哈希，登录有效期 30 天并在使用时
@@ -41,7 +41,7 @@ npm run build
 node .output/server/index.mjs
 ```
 
-数据库是 SQLite 文件 `data/stratamon.db`（自动创建）。
+数据库是 SQLite 文件 `data/monstrata.db`（自动创建）。
 路径可通过 `config.json` 中的 `db.path` 修改（启动时生效）。
 系统设置位于项目根目录的 `config.json`，见下文「身份验证」。
 
@@ -52,12 +52,12 @@ node .output/server/index.mjs
 
 ```json
 {
-  "db": { "path": "data/stratamon.db" },
+  "db": { "path": "data/monstrata.db" },
   "auth": { "enabled": true }
 }
 ```
 
-该文件是可选的（不存在 = 默认值：`data/stratamon.db`，验证关闭）。
+该文件是可选的（不存在 = 默认值：`data/monstrata.db`，验证关闭）。
 `auth.enabled` 在文件修改后立即生效；`db.path` 在启动时生效，修改后需重启
 （相对路径相对于项目根目录解析）。与设置页面不同，这些设置有意要求
 文件系统访问权限 — 无法从 Web 界面关闭身份验证。
@@ -65,7 +65,7 @@ node .output/server/index.mjs
 开启验证后：
 
 - 尚无任何用户 → 应用打开创建首个管理员账户的界面；
-- 所有 API 请求和 WebSocket 都需要 `stratamon_session` cookie
+- 所有 API 请求和 WebSocket 都需要 `monstrata_session` cookie
   （HttpOnly，密码为 SQLite 中的 scrypt 哈希，会话有效期 30 天并在使用时续期）；
 - 页眉可退出登录；在设置页面可修改自己的密码
   （当前会话保持登录，其他会话将被退出）。

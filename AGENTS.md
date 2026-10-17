@@ -1,6 +1,6 @@
 # AGENTS.md
 
-StrataMon: Nuxt 4 monitor for Strata inference engines. Scrapes Prometheus `/metrics` from several servers into SQLite; serves a live dashboard (WebSocket + polling fallback), metric history with rollups, a load heatmap, and i18n.
+MonStrata: Nuxt 4 monitor for Strata inference engines. Scrapes Prometheus `/metrics` from several servers into SQLite; serves a live dashboard (WebSocket + polling fallback), metric history with rollups, a load heatmap, and i18n.
 
 ## Commands
 
@@ -14,11 +14,11 @@ StrataMon: Nuxt 4 monitor for Strata inference engines. Scrapes Prometheus `/met
 
 - Nuxt 4 layout: frontend in `app/`, Nitro backend in `server/` (file-based API in `server/api/`, WS route `server/routes/_ws.ts`).
 - Background loops are Nitro plugins (`server/plugins/scraper.ts`, `rollups.ts`) driving `server/utils/scheduler.ts`: self-rescheduling `setTimeout` that re-reads intervals from the DB every cycle, so settings changes apply without restart (`settings.put.ts` also calls `schedule*` directly).
-- All process-wide server state lives on `globalThis.__stratamon` via `server/utils/runtime.ts` so dev HMR doesn't duplicate timers or lose counter baselines. Add new background state there, never in module-local variables.
-- SQLite via better-sqlite3 (synchronous API), file `data/stratamon.db` (gitignored, auto-created; path from `db.path` in `config.json`, applied when the DB opens at startup). Schema is inline `CREATE ... IF NOT EXISTS` DDL in `server/utils/db.ts` — there is **no migration system**, so schema changes must be idempotent and existing dev DBs updated by hand.
+- All process-wide server state lives on `globalThis.__monstrata` via `server/utils/runtime.ts` so dev HMR doesn't duplicate timers or lose counter baselines. Add new background state there, never in module-local variables.
+- SQLite via better-sqlite3 (synchronous API), file `data/monstrata.db` (gitignored, auto-created; path from `db.path` in `config.json`, applied when the DB opens at startup). Schema is inline `CREATE ... IF NOT EXISTS` DDL in `server/utils/db.ts` — there is **no migration system**, so schema changes must be idempotent and existing dev DBs updated by hand.
 - Storage tiers: `samples` (raw, ~10 s, 48 h) → `rollup_hourly` (400 d) → `rollup_daily` (forever). `/api/range` picks the tier itself from row counts; `server/utils/rollup.ts` is idempotent (recomputes last 3 h / 3 d) and also performs retention deletes.
 - Frontend live state is one shared plugin (`app/plugins/live.ts`, accessed via `useLive()`); pages must not open their own WebSocket.
-- Auth is opt-in via `config.json` (`server/utils/config.ts`, path overridable with `STRATAMON_CONFIG`; missing file = defaults; reloaded on mtime change, never write it from app code). `server/middleware/auth.ts` gates `/api/*` (public allowlist in `OPEN_AUTH_PATHS`; `/api/auth/password` requires a session) and `/_ws` checks the cookie in its own `open()` handler (WS upgrades bypass middleware). Frontend gate: `app/middleware/auth.global.ts` + `useAuth()`; SSR pages that fetch `/api` must forward cookies (`headers: useRequestHeaders(['cookie'])`).
+- Auth is opt-in via `config.json` (`server/utils/config.ts`, path overridable with `MONSTRATA_CONFIG`; missing file = defaults; reloaded on mtime change, never write it from app code). `server/middleware/auth.ts` gates `/api/*` (public allowlist in `OPEN_AUTH_PATHS`; `/api/auth/password` requires a session) and `/_ws` checks the cookie in its own `open()` handler (WS upgrades bypass middleware). Frontend gate: `app/middleware/auth.global.ts` + `useAuth()`; SSR pages that fetch `/api` must forward cookies (`headers: useRequestHeaders(['cookie'])`).
 - Users/sessions are SQLite tables (db.ts); passwords are scrypt hashes. `server/utils/credentials.ts` holds the pure primitives (hash/token/cookie) and must not import other utils. Files reachable from bare Node (`credentials.ts`, `db.ts`, `config.ts`, `runtime.ts` — imported by tests and `scripts/reset-password.mjs`) must use explicit `.ts` extensions in relative imports; extensionless imports break plain Node loading.
 
 ## Metrics
@@ -30,7 +30,7 @@ StrataMon: Nuxt 4 monitor for Strata inference engines. Scrapes Prometheus `/met
 
 ## i18n
 
-- Six locales in `i18n/locales/*.json`; `en.json` is canonical and all six are currently key-synced — add every new UI string to all six files. A new language = one JSON file + entry in `nuxt.config.ts` (strategy `no_prefix`, cookie `stratamon_locale`).
+- Six locales in `i18n/locales/*.json`; `en.json` is canonical and all six are currently key-synced — add every new UI string to all six files. A new language = one JSON file + entry in `nuxt.config.ts` (strategy `no_prefix`, cookie `monstrata_locale`).
 
 ## nuxt.config.ts — do not remove these nitro workarounds
 

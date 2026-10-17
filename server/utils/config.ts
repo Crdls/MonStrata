@@ -20,12 +20,12 @@ export interface AppConfig {
 }
 
 export const CONFIG_DEFAULTS: AppConfig = {
-  db: { path: 'data/stratamon.db' },
+  db: { path: 'data/monstrata.db' },
   auth: { enabled: false }
 }
 
 export function configPath (): string {
-  return process.env.STRATAMON_CONFIG || resolve(process.cwd(), 'config.json')
+  return process.env.MONSTRATA_CONFIG || resolve(process.cwd(), 'config.json')
 }
 
 export function parseConfig (text: string | null): AppConfig {
@@ -35,7 +35,7 @@ export function parseConfig (text: string | null): AppConfig {
     const path = typeof raw?.db?.path === 'string' && raw.db.path.trim() ? raw.db.path.trim() : CONFIG_DEFAULTS.db.path
     return { db: { path }, auth: { enabled: raw?.auth?.enabled === true } }
   } catch (err) {
-    console.error('[stratamon] could not parse config.json, using defaults:', err)
+    console.error('[monstrata] could not parse config.json, using defaults:', err)
     return CONFIG_DEFAULTS
   }
 }
@@ -59,7 +59,7 @@ export function loadConfig (): AppConfig {
       try {
         text = readFileSync(configPath(), 'utf8')
       } catch (err) {
-        console.error('[stratamon] could not read config.json, using defaults:', err)
+        console.error('[monstrata] could not read config.json, using defaults:', err)
       }
     }
     rt.config = { mtime, value: parseConfig(text) }
