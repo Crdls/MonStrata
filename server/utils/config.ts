@@ -1,19 +1,26 @@
 import { readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { runtime } from './runtime'
+import { runtime } from './runtime.ts'
 
 /**
  * System-level settings kept in `config.json` next to the project root —
  * unlike the scrape settings in the DB these are intentionally NOT editable
  * from the UI (you need filesystem access to change them, see README).
+ * This file is reachable from bare Node (via db.ts), keep relative imports
+ * with explicit `.ts` extensions.
  */
 export interface AppConfig {
+  db: {
+    /** SQLite file; relative paths resolve from the project root (cwd) */
+    path: string
+  }
   auth: {
     enabled: boolean
   }
 }
 
 export const CONFIG_DEFAULTS: AppConfig = {
+  db: { path: 'data/stratamon.db' },
   auth: { enabled: false }
 }
 
@@ -21,11 +28,12 @@ export function configPath (): string {
   return process.env.STRATAMON_CONFIG || resolve(process.cwd(), 'config.json')
 }
 
-function parseConfig (text: string | null): AppConfig {
+export function parseConfig (text: string | null): AppConfig {
   if (!text) return CONFIG_DEFAULTS
   try {
-    const raw = JSON.parse(text) as { auth?: { enabled?: unknown } }
-    return { auth: { enabled: raw?.auth?.enabled === true } }
+    const raw = JSON.parse(text) as { db?: { path?: unknown }, auth?: { enabled?: unknown } }
+    const path = typeof raw?.db?.path === 'string' && raw.db.path.trim() ? raw.db.path.trim() : CONFIG_DEFAULTS.db.path
+    return { db: { path }, auth: { enabled: raw?.auth?.enabled === true } }
   } catch (err) {
     console.error('[stratamon] could not parse config.json, using defaults:', err)
     return CONFIG_DEFAULTS
@@ -34,9 +42,9 @@ function parseConfig (text: string | null): AppConfig {
 
 /**
  * Read `config.json` from the project root. The file is optional — when it is
- * missing or invalid we fall back to the defaults (auth disabled). The cached
- * value is reloaded whenever the file mtime changes, so edits apply without a
- * restart.
+ * missing or invalid we fall back to the defaults. The cached value is
+ * reloaded whenever the file mtime changes, so `auth.enabled` edits apply
+ * without a restart (`db.path` is applied only when the DB opens at startup).
  */
 export function loadConfig (): AppConfig {
   const rt = runtime()

@@ -42,22 +42,25 @@ node .output/server/index.mjs
 ```
 
 数据库是 SQLite 文件 `data/stratamon.db`（自动创建）。
-可通过 `STRATAMON_DB` 环境变量覆盖路径。
-可选的系统设置（`config.json`，例如开启身份验证）位于项目根目录，
-见下文「身份验证」。
+路径可通过 `config.json` 中的 `db.path` 修改（启动时生效）。
+系统设置位于项目根目录的 `config.json`，见下文「身份验证」。
 
 ## 身份验证
 
 系统设置位于项目根目录的 `config.json` — 将 `config.json.example`
-复制为 `config.json` 并设置：
+复制为 `config.json`：
 
 ```json
-{ "auth": { "enabled": true } }
+{
+  "db": { "path": "data/stratamon.db" },
+  "auth": { "enabled": true }
+}
 ```
 
-该文件是可选的（不存在 = 验证关闭），修改无需重启即可生效。
-与设置页面不同，这些开关有意要求文件系统访问权限 —
-无法从 Web 界面关闭身份验证。
+该文件是可选的（不存在 = 默认值：`data/stratamon.db`，验证关闭）。
+`auth.enabled` 在文件修改后立即生效；`db.path` 在启动时生效，修改后需重启
+（相对路径相对于项目根目录解析）。与设置页面不同，这些设置有意要求
+文件系统访问权限 — 无法从 Web 界面关闭身份验证。
 
 开启验证后：
 
@@ -121,6 +124,7 @@ test/           基于真实 /metrics 固定数据的解析器测试 + 认证测
 ```sh
 node test/parse.test.mjs
 node test/auth.test.mjs
+node test/config.test.mjs
 ```
 
 ## 备注

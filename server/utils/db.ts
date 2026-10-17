@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { loadConfig } from './config.ts'
 
 export interface ServerRow {
   id: number
@@ -110,7 +111,9 @@ let db: Database.Database | null = null
 
 export function useDb (): Database.Database {
   if (!db) {
-    const path = process.env.STRATAMON_DB || resolve(process.cwd(), 'data/stratamon.db')
+    // config.json db.path (relative resolves from the project root);
+    // applied at startup - restart after changing it
+    const path = resolve(loadConfig().db.path)
     mkdirSync(dirname(path), { recursive: true })
     db = new Database(path)
     db.pragma('journal_mode = WAL')

@@ -1,4 +1,7 @@
 {
+  "db": {
+    "path": "data/stratamon.db"
+  },
   "auth": {
     "enabled": false
   }

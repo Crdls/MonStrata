@@ -44,22 +44,27 @@ node .output/server/index.mjs
 ```
 
 The database is a SQLite file `data/stratamon.db` (created automatically).
-The path can be overridden with the `STRATAMON_DB` variable.
-Optional system settings (`config.json`, e.g. enabling authentication)
-live in the project root — see [Authentication](#authentication).
+Its path can be changed with `db.path` in `config.json` (applied at startup).
+System settings live in `config.json` in the project root — see
+[Authentication](#authentication).
 
 ## Authentication
 
 System-level settings live in `config.json` next to the project root — copy
-`config.json.example` to `config.json` and set:
+`config.json.example` to `config.json`:
 
 ```json
-{ "auth": { "enabled": true } }
+{
+  "db": { "path": "data/stratamon.db" },
+  "auth": { "enabled": true }
+}
 ```
 
-The file is optional (absent = auth off) and edits apply without a restart.
-Unlike the Settings page, these switches intentionally require filesystem
-access — auth cannot be turned off from the web UI.
+The file is optional (absent = defaults: `data/stratamon.db`, auth off).
+`auth.enabled` applies as soon as the file changes; `db.path` applies at
+startup — restart after changing it (relative paths resolve from the project
+root). Unlike the Settings page, these switches intentionally require
+filesystem access — auth cannot be turned off from the web UI.
 
 With auth enabled:
 
@@ -126,6 +131,7 @@ test/           parser test on real /metrics fixtures + auth helper tests
 ```sh
 node test/parse.test.mjs
 node test/auth.test.mjs
+node test/config.test.mjs
 ```
 
 ## Notes
