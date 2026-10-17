@@ -1,7 +1,15 @@
 <script setup lang="ts">
+import type { Locale } from '#i18n'
+
 const route = useRoute()
 const colorMode = useColorMode()
-const { locale, t } = useI18n()
+// use setLocale (not a direct locale write) so lazy messages are loaded
+// and the detectBrowserLanguage cookie is updated
+const { locale, setLocale, t } = useI18n()
+const selectedLocale = computed({
+  get: () => locale.value,
+  set: (value: string) => { void setLocale(value as Locale) }
+})
 
 const nav = [
   { to: '/', icon: 'i-lucide-layout-dashboard', label: 'nav.dashboard' },
@@ -49,7 +57,7 @@ function isActive (to: string) {
           </NuxtLink>
         </nav>
         <USelect
-          v-model="locale"
+          v-model="selectedLocale"
           :items="localeItems"
           size="sm"
           color="neutral"
