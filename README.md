@@ -27,7 +27,7 @@ Web-мониторинг движков инференса **Strata**: неск�
 
 ```sh
 npm install
-npm run dev        # http://localhost:3000
+npm run dev        # http://localhost:3003
 ```
 
 Продакшен:

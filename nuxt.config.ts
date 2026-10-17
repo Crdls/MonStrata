@@ -1,6 +1,9 @@
 export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxtjs/i18n'],
   css: ['~/assets/css/main.css'],
+  devServer: {
+    port: 3003
+  },
   nitro: {
     // native module must not be bundled
     external: ['better-sqlite3'],
