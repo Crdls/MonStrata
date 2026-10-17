@@ -1,98 +1,103 @@
 # StrataMon
 
-Web-мониторинг движков инференса **Strata**: несколько серверов, live-дашборд,
-история метрик и тепловая карта загрузки с выбором периода.
+**English** · [Русский](docs/README.ru.md) · [中文](docs/README.zh.md)
 
-## Возможности
+Web monitoring for **Strata** inference engines: several servers, a live
+dashboard, metric history and a load heatmap with selectable period.
 
-- **Несколько серверов** — добавляете Strata-движок по базовому URL
-  (например `http://192.168.10.76:8000`), метрики читаются с `/metrics`
-  (Prometheus text format, заголовок `Accept: text/plain`).
-- **Live-дашборд** — состояние движка (idle / reading / generating),
-  tok/s, очереди, KV cache, по каждой GPU: util / VRAM / t° / мощность,
-  CPU и RAM хоста. Обновление по WebSocket с fallback на polling.
-- **История** — графики по каждому серверу за 1h / 6h / 24h / 7d / 30d.
-- **Тепловая карта** — загрузка всех серверов по бакетам времени,
-  периоды 24ч / 7д / 30д / год, выбор метрики (GPU util, CPU, tok/s,
-  очередь, VRAM %, мощность, hit rate и др.).
-- **Настройки** — интервал поллера и интервал роллапа (по умолчанию 30 с),
-  глубина хранения raw-данных и часовых агрегатов. Применяются на лету.
-- **i18n** — интерфейс на английском, русском, немецком, испанском, французском
-  и китайском; язык определяется по браузеру и переключается в шапке
-  (хранится в cookie `stratamon_locale`). Строки — в `i18n/locales/*.json`,
-  новый язык = один JSON-файл + запись в `nuxt.config.ts`.
-- Авторизации нет — сервис рассчитан на доверенную локальную сеть.
+## Features
 
-## Запуск
+- **Multiple servers** — add a Strata engine by base URL
+  (e.g. `http://192.168.10.76:8000`), metrics are read from `/metrics`
+  (Prometheus text format, `Accept: text/plain` header required).
+- **Live dashboard** — engine state (idle / reading / generating),
+  tok/s, queues, KV cache, per GPU: util / VRAM / temperature / power,
+  plus host CPU and RAM. Updates over WebSocket with a polling fallback.
+- **History** — charts per server for 1h / 6h / 24h / 7d / 30d.
+- **Heatmap** — load of all servers by time buckets, periods of
+  24h / 7d / 30d / year, selectable metric (GPU util, CPU, tok/s,
+  queue, VRAM %, power, hit rate, etc.).
+- **Settings** — poller interval and rollup interval (30 s by default),
+  retention depth for raw data and hourly aggregates. Applied on the fly.
+- **i18n** — UI in English, Russian, German, Spanish, French and Chinese;
+  language is detected from the browser and switched in the header
+  (stored in the `stratamon_locale` cookie). Strings live in
+  `i18n/locales/*.json`, a new language = one JSON file + an entry in
+  `nuxt.config.ts`.
+- No authentication — the service is meant for a trusted local network.
+
+## Running
 
 ```sh
 npm install
 npm run dev        # http://localhost:3003
 ```
 
-Продакшен:
+Production:
 
 ```sh
 npm run build
 node .output/server/index.mjs
 ```
 
-База — SQLite-файл `data/stratamon.db` (создаётся автоматически).
-Путь можно переопределить переменной `STRATAMON_DB`.
+The database is a SQLite file `data/stratamon.db` (created automatically).
+The path can be overridden with the `STRATAMON_DB` variable.
 
-## Хранение данных
+## Data storage
 
-| слой | разрешение | срок по умолчанию |
+| tier | resolution | default retention |
 |---|---|---|
-| `samples` | каждый поллерный цикл (~10 с) | 48 часов |
-| `rollup_hourly` | часовые бакеты (avg/max/min) | 400 дней |
-| `rollup_daily` | дневные бакеты | бессрочно |
+| `samples` | every poller cycle (~10 s) | 48 hours |
+| `rollup_hourly` | hourly buckets (avg/max/min) | 400 days |
+| `rollup_daily` | daily buckets | forever |
 
-Счётчики (`*_total`) при опросе превращаются в скорости (`derived:*`):
-`gen_tok_s`, `prompt_tok_s`, `req_s`, средние по окну `_sum/_count` для
-TTFT / ITL / E2E, проценты занятости движка и памяти.
+Counters (`*_total`) are turned into rates (`derived:*`) while scraping:
+`gen_tok_s`, `prompt_tok_s`, `req_s`, window averages `_sum/_count` for
+TTFT / ITL / E2E, engine and memory busy percentages.
 
-## Структура
+## Structure
 
 ```
-app/            Vue 3 + Nuxt UI фронтенд
-  pages/        dashboard, сервер, heatmap, сервера, настройки
+app/            Vue 3 + Nuxt UI frontend
+  pages/        dashboard, server, heatmap, servers, settings
   components/   ServerCard, MetricChart (uPlot), LoadHeatmap, ...
-  plugins/live.ts  общий стейт + WebSocket-клиент
-i18n/locales/   словари: en, ru, de, es, fr, zh
+  plugins/live.ts  shared state + WebSocket client
+i18n/locales/   dictionaries: en, ru, de, es, fr, zh
 server/
-  utils/        парсер Prometheus, SQLite, каталог метрик, скрейпер, роллапы
-  plugins/      фоновые циклы (scrape, rollups)
+  utils/        Prometheus parser, SQLite, metric catalog, scraper, rollups
+  plugins/      background loops (scrape, rollups)
   api/          servers CRUD, live, range, heatmap, settings
-  routes/_ws.ts WebSocket-эндпоинт
-test/           тест парсера на реальных фикстурах (/metrics)
+  routes/_ws.ts WebSocket endpoint
+test/           parser test on real /metrics fixtures
 ```
 
 ## API
 
 - `GET|POST /api/servers`, `PATCH|DELETE /api/servers/:id`, `POST /api/servers/:id/ping`
-- `GET /api/live` — текущие снапшоты всех серверов
-- `GET /api/range?serverId&metric&from&to` — история метрики (raw/hourly/daily — источник выбирается сам)
-- `GET /api/heatmap?metric&period=24h|7d|30d|1y` — матрица серверы × бакеты
+- `GET /api/live` — current snapshots of all servers
+- `GET /api/range?serverId&metric&from&to` — metric history (raw/hourly/daily — the source is picked automatically)
+- `GET /api/heatmap?metric&period=24h|7d|30d|1y` — servers × buckets matrix
 - `GET|PUT /api/settings`
-- `WS /_ws` — push-снапшоты
+- `WS /_ws` — push snapshots
 
-## Тесты
+## Tests
 
 ```sh
 node test/parse.test.mjs
 ```
 
-## Примечания
+## Notes
 
-- Требуется Node ≥ 22.22 / 24.15 (на более старом Node 24 Nuxt 4.6 может
-  ругаться EBADENGINE).
-- В `nuxt.config.ts` два важных обхода окружения:
-  - `nitro.externals.inline` — костыль под Windows до фикса
-    [nuxt/nuxt#36467](https://github.com/nuxt/nuxt/issues/36467)
-    (без него весь SSR отдаёт 500);
-  - `nitro.experimental.websocket: true` — включает подключение WebSocket
-    апгрейда в серверном пресете (иначе `/_ws` не работает ни в dev, ни в проде).
-- `/metrics` Strata отдаёт JSON без заголовка `Accept: text/plain` —
-  скрейпер всегда шлёт этот заголовок.
-- Авторизации нет: сервис для доверенной сети, наружу не торчим.
+- Node ≥ 22.22 / 24.15 is required (older Node 24 builds of Nuxt 4.6 may
+  complain with EBADENGINE).
+- `nuxt.config.ts` contains two important environment workarounds:
+  - `nitro.externals.inline` — a Windows-only hack until
+    [nuxt/nuxt#36467](https://github.com/nuxt/nuxt/issues/36467) is fixed
+    (without it the whole SSR returns 500);
+  - `nitro.experimental.websocket: true` — enables the WebSocket upgrade
+    attach in the server preset (otherwise `/_ws` works neither in dev
+    nor in production).
+- Strata's `/metrics` returns JSON without the `Accept: text/plain`
+  header — the scraper always sends it.
+- No authentication: the service is for a trusted network and is not
+  exposed to the outside.

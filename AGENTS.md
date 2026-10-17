@@ -40,4 +40,5 @@ StrataMon: Nuxt 4 monitor for Strata inference engines. Scrapes Prometheus `/met
 ## Conventions
 
 - No auth is intentional (trusted LAN service) — don't add it unprompted.
-- README and user-facing docs are in Russian; code comments in English; commit messages are plain English imperatives (no conventional-commit prefixes).
+- README is English by default (`README.md`); translations are `docs/README.ru.md` and `docs/README.zh.md` — each starts with a language-switch line of relative links. Keep all three in sync when editing. User-facing docs are in Russian; code comments in English; commit messages are plain English imperatives (no conventional-commit prefixes).
+- After any change that affects user-visible behavior, setup, ports, commands, or architecture, update `README.md` in the same task to keep it accurate.
