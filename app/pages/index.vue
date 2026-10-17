@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { servers, connected } = useLive()
+const { servers, connected, ready } = useLive()
 const { t } = useI18n()
 </script>
 
@@ -22,7 +22,11 @@ const { t } = useI18n()
       </div>
     </div>
 
-    <div v-if="servers.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+    <div v-if="!ready" class="flex items-center justify-center py-20">
+      <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-muted" />
+    </div>
+
+    <div v-else-if="servers.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
       <UIcon name="i-lucide-server" class="size-12 text-muted mb-4" />
       <h2 class="text-lg font-semibold mb-1">{{ t('dashboard.emptyTitle') }}</h2>
       <p class="text-sm text-muted mb-4 max-w-md">

@@ -18,12 +18,15 @@ export interface LiveServer {
 export interface LiveApi {
   servers: Ref<LiveServer[]>
   connected: Ref<boolean>
+  /** true once the first successful `/api/live` fetch confirmed the server list */
+  ready: Ref<boolean>
   refresh: () => Promise<void>
 }
 
 export default defineNuxtPlugin(() => {
   const servers = ref<LiveServer[]>([])
   const connected = ref(false)
+  const ready = ref(false)
   let ws: WebSocket | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
   let pollTimer: ReturnType<typeof setInterval> | undefined
@@ -42,6 +45,7 @@ export default defineNuxtPlugin(() => {
   async function refresh () {
     try {
       servers.value = await $fetch<LiveServer[]>('/api/live')
+      ready.value = true
     } catch (err: unknown) {
       if (isUnauthorized(err)) goToLogin()
       // server unreachable - keep whatever we have
@@ -58,7 +62,11 @@ export default defineNuxtPlugin(() => {
     if (!import.meta.client || ws) return
     const proto = location.protocol === 'https:' ? 'wss' : 'ws'
     ws = new WebSocket(`${proto}://${location.host}/_ws`)
-    ws.onopen = () => { connected.value = true }
+    ws.onopen = () => {
+      connected.value = true
+      // retry the list fetch in case the initial one failed while offline
+      void refresh()
+    }
     ws.onmessage = (ev) => {
       try {
         const msg = JSON.parse(String(ev.data))
@@ -94,5 +102,5 @@ export default defineNuxtPlugin(() => {
     })
   }
 
-  return { provide: { live: { servers, connected, refresh } satisfies LiveApi } }
+  return { provide: { live: { servers, connected, ready, refresh } satisfies LiveApi } }
 })
