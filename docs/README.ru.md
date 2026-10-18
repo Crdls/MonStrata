@@ -39,20 +39,30 @@ Web-мониторинг движков инференса **[Strata](https://gi
   ещё нет — приложение откроет экран создания первого аккаунта. Можно так же входить
   через GitLab-сервер в локальной сети (OAuth2, см. раздел «Авторизация»).
 
-## Запуск
+## Установка
 
 ```sh
 git clone https://github.com/Crdls/MonStrata.git
 cd MonStrata
-npm install
-npm run dev        # http://localhost:3003
+npm install --omit=dev
+npm run build
 ```
 
-Продакшен:
+Если на хосте мало свободной памяти (например, там же крутится Strata),
+установку или сборку может убивать с кодом 135 — ограничьте кучу Node:
+`NODE_OPTIONS=--max-old-space-size=1024 npm install --omit=dev` (и так же
+с `npm run build`).
+
+## Запуск
 
 ```sh
-npm run build
-node .output/server/index.mjs
+node .output/server/index.mjs    # http://localhost:3000
+```
+
+В локальную сеть на конкретном адресе и порте (host/port любые):
+
+```sh
+NITRO_HOST=0.0.0.0 NITRO_PORT=3003 node .output/server/index.mjs
 ```
 
 База — SQLite-файл `data/monstrata.db` (создаётся автоматически).

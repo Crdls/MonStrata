@@ -40,20 +40,31 @@ with selectable period.
   in through a GitLab server on the LAN (OAuth2, see
   [Authentication](#authentication)).
 
-## Running
+## Installation
 
 ```sh
 git clone https://github.com/Crdls/MonStrata.git
 cd MonStrata
-npm install
-npm run dev        # http://localhost:3003
+npm install --omit=dev
+npm run build
 ```
 
-Production:
+If the host is busy and short on free RAM (e.g. it runs Strata too), the
+install or build step may get killed with exit code 135 — cap the Node heap:
+`NODE_OPTIONS=--max-old-space-size=1024 npm install --omit=dev` (same for
+`npm run build`).
+
+## Running
 
 ```sh
-npm run build
-node .output/server/index.mjs
+node .output/server/index.mjs    # http://localhost:3000
+```
+
+Serving to the local network on a specific address and port (any host/port
+work the same way):
+
+```sh
+NITRO_HOST=0.0.0.0 NITRO_PORT=3003 node .output/server/index.mjs
 ```
 
 The database is a SQLite file `data/monstrata.db` (created automatically).

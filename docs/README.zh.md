@@ -34,20 +34,29 @@
   自动续期，角色分为 `admin` 和 `user`。开启验证且尚无任何用户时，应用会打开创建首个管理员账户的界面。
   也可以通过局域网内的 GitLab 服务器登录（OAuth2，见下文「身份验证」）。
 
-## 运行
+## 安装
 
 ```sh
 git clone https://github.com/Crdls/MonStrata.git
 cd MonStrata
-npm install
-npm run dev        # http://localhost:3003
+npm install --omit=dev
+npm run build
 ```
 
-生产环境：
+如果主机空闲内存不足（比如同时运行着 Strata），安装或构建可能以
+退出码 135 被终止 — 限制 Node 堆大小即可：
+`NODE_OPTIONS=--max-old-space-size=1024 npm install --omit=dev`（`npm run build` 同理）。
+
+## 运行
 
 ```sh
-npm run build
-node .output/server/index.mjs
+node .output/server/index.mjs    # http://localhost:3000
+```
+
+开放到局域网（主机和端口任意）：
+
+```sh
+NITRO_HOST=0.0.0.0 NITRO_PORT=3003 node .output/server/index.mjs
 ```
 
 数据库是 SQLite 文件 `data/monstrata.db`（自动创建）。
