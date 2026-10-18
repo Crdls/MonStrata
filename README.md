@@ -5,6 +5,8 @@
 Web monitoring for **Strata** inference engines: several servers, a live
 dashboard, metric history and a load heatmap with selectable period.
 
+![Dashboard](docs/images/dashboard-en.png)
+
 ## Features
 
 - **Multiple servers** — add a Strata engine by base URL
