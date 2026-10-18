@@ -21,6 +21,7 @@ export default defineEventHandler((event) => {
     if (session.refreshed && token) setSessionCookie(event, token)
     event.context.userId = session.user.id
     event.context.username = session.user.username
+    event.context.userRole = session.user.role
     event.context.sessionTokenHash = session.tokenHash
   }
   if (!OPEN_AUTH_PATHS.has(path) && !session) {

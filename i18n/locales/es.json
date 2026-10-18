@@ -3,6 +3,7 @@
     "dashboard": "Panel",
     "heatmap": "Mapa de calor",
     "servers": "Servidores",
+    "users": "Usuarios",
     "settings": "Ajustes"
   },
   "common": {
@@ -68,7 +69,9 @@
     "toastParsed": "{n} series leídas",
     "toastUnreachable": "{name}: inaccesible",
     "toastPingFailed": "Error en la prueba",
-    "toastRemoved": "Servidor eliminado"
+    "toastRemoved": "Servidor eliminado",
+    "owner": "de {name}",
+    "ownerUnknown": "autor desconocido"
   },
   "server": {
     "noData": "Sin datos en este rango",
@@ -168,6 +171,37 @@
     "gitlabForbidden": "Tu cuenta de GitLab no tiene permitido entrar aquí",
     "setPassword": "Establecer contraseña",
     "setPasswordHint": "Has iniciado sesión con GitLab y aún no tienes contraseña local. Define una para iniciar sesión también sin GitLab."
+  },
+  "users": {
+    "title": "Usuarios",
+    "subtitle": "Cuentas con acceso permitido. Los roles, contraseñas y el acceso se gestionan aquí.",
+    "username": "Nombre de usuario",
+    "you": "tú",
+    "gitlab": "GitLab",
+    "role": "Rol",
+    "roleAdmin": "Administrador",
+    "roleUser": "Usuario",
+    "status": "Estado",
+    "active": "activo",
+    "frozen": "congelado",
+    "created": "Creado",
+    "lastLogin": "Último acceso",
+    "actions": "Acciones",
+    "edit": "Editar",
+    "editTitle": "Editar {name}",
+    "selfHint": "No puedes degradar ni congelar tu propia cuenta.",
+    "frozenHelp": "Un usuario congelado no puede iniciar sesión; sus sesiones activas se cierran de inmediato.",
+    "newPassword": "Nueva contraseña",
+    "newPasswordHelp": "Déjalo vacío para mantener la contraseña actual. Las otras sesiones del usuario se cierran.",
+    "confirmNewPassword": "Confirmar nueva contraseña",
+    "empty": "Aún no hay usuarios.",
+    "delete": "Eliminar",
+    "confirmTitle": "Eliminar usuario",
+    "confirmText": "¿Eliminar a {name}? Los servidores que creó siguen funcionando. Esto no se puede deshacer.",
+    "toastSaved": "Usuario guardado",
+    "toastSaveFailed": "No se pudo guardar el usuario",
+    "toastDeleted": "Usuario eliminado",
+    "toastDeleteFailed": "No se pudo eliminar el usuario"
   },
   "metric": {
     "vllm:num_requests_running": "Peticiones activas",

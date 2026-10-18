@@ -3,6 +3,7 @@
     "dashboard": "Tableau de bord",
     "heatmap": "Carte thermique",
     "servers": "Serveurs",
+    "users": "Utilisateurs",
     "settings": "Réglages"
   },
   "common": {
@@ -68,7 +69,9 @@
     "toastParsed": "{n} séries lues",
     "toastUnreachable": "{name} : injoignable",
     "toastPingFailed": "Échec du test",
-    "toastRemoved": "Serveur supprimé"
+    "toastRemoved": "Serveur supprimé",
+    "owner": "par {name}",
+    "ownerUnknown": "auteur inconnu"
   },
   "server": {
     "noData": "Aucune donnée sur cette plage",
@@ -168,6 +171,37 @@
     "gitlabForbidden": "Votre compte GitLab n'est pas autorisé ici",
     "setPassword": "Définir le mot de passe",
     "setPasswordHint": "Vous êtes connecté via GitLab sans mot de passe local. Définissez-en un pour vous connecter aussi sans GitLab."
+  },
+  "users": {
+    "title": "Utilisateurs",
+    "subtitle": "Comptes autorisés à se connecter. Les rôles, mots de passe et accès se gèrent ici.",
+    "username": "Nom d'utilisateur",
+    "you": "vous",
+    "gitlab": "GitLab",
+    "role": "Rôle",
+    "roleAdmin": "Admin",
+    "roleUser": "Utilisateur",
+    "status": "Statut",
+    "active": "actif",
+    "frozen": "gelé",
+    "created": "Créé",
+    "lastLogin": "Dernière connexion",
+    "actions": "Actions",
+    "edit": "Modifier",
+    "editTitle": "Modifier {name}",
+    "selfHint": "Vous ne pouvez pas rétrograder ni geler votre propre compte.",
+    "frozenHelp": "Un utilisateur gelé ne peut pas se connecter ; ses sessions actives sont coupées immédiatement.",
+    "newPassword": "Nouveau mot de passe",
+    "newPasswordHelp": "Laissez vide pour conserver le mot de passe actuel. Les autres sessions de l'utilisateur sont déconnectées.",
+    "confirmNewPassword": "Confirmer le nouveau mot de passe",
+    "empty": "Aucun utilisateur pour le moment.",
+    "delete": "Supprimer",
+    "confirmTitle": "Supprimer l'utilisateur",
+    "confirmText": "Supprimer {name} ? Les serveurs qu'il a créés continuent de fonctionner. Cette action est irréversible.",
+    "toastSaved": "Utilisateur enregistré",
+    "toastSaveFailed": "Impossible d'enregistrer l'utilisateur",
+    "toastDeleted": "Utilisateur supprimé",
+    "toastDeleteFailed": "Impossible de supprimer l'utilisateur"
   },
   "metric": {
     "vllm:num_requests_running": "Requêtes en cours",

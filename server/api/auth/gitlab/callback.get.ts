@@ -4,7 +4,7 @@ import {
 import { isGitlabReady, loadConfig } from '../../../utils/config'
 import { normalizeUsername, startSession } from '../../../utils/auth'
 import { runtime } from '../../../utils/runtime'
-import { createUser, getUserByUsername, touchLastLogin } from '../../../utils/db'
+import { countUsers, createUser, getUserByUsername, touchLastLogin } from '../../../utils/db'
 
 // GitLab OAuth callback: verify state, exchange the code for a token, read
 // the GitLab user, find-or-create the local user and open a session.
@@ -55,8 +55,10 @@ export default defineEventHandler(async (event) => {
       if (!isGroupAllowed(gl.allowedGroups, paths)) return fail('gitlab-forbidden')
     }
 
-    // empty pass_hash: no local password yet, Settings offers to set one
-    const user = getUserByUsername(username) ?? createUser(username, '')
+    // empty pass_hash: no local password yet, Settings offers to set one;
+    // the very first sign-up gets the admin role, later GitLab users are plain users
+    const user = getUserByUsername(username) ?? createUser(username, '', countUsers() === 0 ? 'admin' : 'user', true)
+    if (user.disabled) return fail('gitlab-forbidden')
     touchLastLogin(user.id)
     startSession(event, user.id)
     return sendRedirect(event, '/')

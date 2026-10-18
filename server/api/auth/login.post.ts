@@ -13,7 +13,8 @@ export default defineEventHandler(async (event) => {
   const username = typeof body?.username === 'string' ? body.username.trim() : ''
   const password = typeof body?.password === 'string' ? body.password : ''
   const user = username ? getUserByUsername(username) : null
-  const ok = user !== null && password.length > 0 && await verifyPassword(password, user.pass_hash)
+  // frozen users get the same anonymous rejection as wrong credentials
+  const ok = user !== null && user.disabled === 0 && password.length > 0 && await verifyPassword(password, user.pass_hash)
   if (!user || !ok) {
     recordLoginFailure(ip)
     throw createError({ statusCode: 401, statusMessage: 'Invalid username or password' })
@@ -21,5 +22,5 @@ export default defineEventHandler(async (event) => {
   clearLoginFailures(ip)
   touchLastLogin(user.id)
   startSession(event, user.id)
-  return authStatus(event, { id: user.id, username: user.username, hasPassword: true })
+  return authStatus(event, { id: user.id, username: user.username, role: user.role, hasPassword: true })
 })

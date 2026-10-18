@@ -6,6 +6,7 @@ import {
   getSessionUser, purgeExpiredSessions
 } from './db'
 import { loadConfig, isGitlabReady } from './config'
+import { canManageServer, type Actor } from './permissions'
 import { runtime } from './runtime'
 
 // re-export the primitives so auth consumers do not need two imports
@@ -14,6 +15,7 @@ export { SESSION_COOKIE, SESSION_TTL_MS, hashPassword, hashToken, cookieValue, v
 export interface AuthUser {
   id: number
   username: string
+  role: 'admin' | 'user'
   /** false for GitLab-created users who have not set a local password yet */
   hasPassword: boolean
 }
@@ -32,7 +34,8 @@ export function verifySessionToken (token: string | null | undefined): VerifiedS
   const row = getSessionUser(tokenHash)
   if (!row) return null
   const now = Date.now()
-  if (row.expires_at <= now) {
+  if (row.expires_at <= now || row.disabled) {
+    // expired, or an admin froze this user: drop the session on the spot
     deleteSession(tokenHash)
     return null
   }
@@ -44,9 +47,24 @@ export function verifySessionToken (token: string | null | undefined): VerifiedS
   // opportunistic cleanup, cheap enough to run sporadically
   if (Math.random() < 0.02) purgeExpiredSessions(now)
   return {
-    user: { id: row.user_id, username: row.username, hasPassword: row.pass_hash !== '' },
+    user: { id: row.user_id, username: row.username, role: row.role, hasPassword: row.pass_hash !== '' },
     tokenHash,
     refreshed
+  }
+}
+
+/** Gate for admin-only API routes; runs after the auth middleware filled the context. */
+export function requireAdmin (event: NitroEvent): void {
+  if (event.context.userRole !== 'admin') {
+    throw createError({ statusCode: 403, statusMessage: 'Admin access required' })
+  }
+}
+
+/** Only the creator or an admin may change a server (nobody checked while auth is off). */
+export function assertCanManageServer (event: NitroEvent, server: { created_by: number | null }): void {
+  const actor: Actor = { userId: event.context.userId, userRole: event.context.userRole }
+  if (!canManageServer(loadConfig().auth.enabled, actor, server)) {
+    throw createError({ statusCode: 403, statusMessage: 'Only the creator or an admin can change this server' })
   }
 }
 

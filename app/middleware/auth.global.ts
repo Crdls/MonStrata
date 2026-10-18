@@ -5,10 +5,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const { load } = useAuth()
   const status = await load()
   if (!status || !status.authEnabled) {
-    return to.path === '/login' ? navigateTo('/') : undefined
+    if (to.path === '/login' || to.path === '/users') return navigateTo('/')
+    return undefined
   }
   if (status.user) {
-    return to.path === '/login' ? navigateTo('/') : undefined
+    if (to.path === '/login') return navigateTo('/')
+    // the user table is admin-only (the API enforces it too)
+    if (to.path === '/users' && status.user.role !== 'admin') return navigateTo('/')
+    return undefined
   }
   if (to.path !== '/login') return navigateTo('/login')
 })

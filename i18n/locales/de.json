@@ -3,6 +3,7 @@
     "dashboard": "Übersicht",
     "heatmap": "Heatmap",
     "servers": "Server",
+    "users": "Benutzer",
     "settings": "Einstellungen"
   },
   "common": {
@@ -68,7 +69,9 @@
     "toastParsed": "{n} Serien gelesen",
     "toastUnreachable": "{name}: nicht erreichbar",
     "toastPingFailed": "Test-Anfrage fehlgeschlagen",
-    "toastRemoved": "Server entfernt"
+    "toastRemoved": "Server entfernt",
+    "owner": "von {name}",
+    "ownerUnknown": "unbekannter Ersteller"
   },
   "server": {
     "noData": "Keine Daten in diesem Bereich",
@@ -168,6 +171,37 @@
     "gitlabForbidden": "Ihr GitLab-Konto ist hier nicht zugelassen",
     "setPassword": "Passwort festlegen",
     "setPasswordHint": "Sie haben sich über GitLab angemeldet und noch kein lokales Passwort. Legen Sie eines fest, um sich auch ohne GitLab anzumelden."
+  },
+  "users": {
+    "title": "Benutzer",
+    "subtitle": "Konten mit Zugang. Rollen, Passwörter und Zugriff werden hier verwaltet.",
+    "username": "Benutzername",
+    "you": "Sie",
+    "gitlab": "GitLab",
+    "role": "Rolle",
+    "roleAdmin": "Admin",
+    "roleUser": "Benutzer",
+    "status": "Status",
+    "active": "aktiv",
+    "frozen": "gesperrt",
+    "created": "Erstellt",
+    "lastLogin": "Letzte Anmeldung",
+    "actions": "Aktionen",
+    "edit": "Bearbeiten",
+    "editTitle": "{name} bearbeiten",
+    "selfHint": "Das eigene Konto kann nicht herabgestuft oder gesperrt werden.",
+    "frozenHelp": "Gesperrte Benutzer können sich nicht anmelden; aktive Sitzungen werden sofort beendet.",
+    "newPassword": "Neues Passwort",
+    "newPasswordHelp": "Leer lassen, um das aktuelle Passwort zu behalten. Andere Sitzungen des Benutzers werden abgemeldet.",
+    "confirmNewPassword": "Neues Passwort bestätigen",
+    "empty": "Noch keine Benutzer.",
+    "delete": "Löschen",
+    "confirmTitle": "Benutzer löschen",
+    "confirmText": "{name} löschen? Von diesem Benutzer erstellte Server bleiben erhalten. Dies kann nicht rückgängig gemacht werden.",
+    "toastSaved": "Benutzer gespeichert",
+    "toastSaveFailed": "Benutzer konnte nicht gespeichert werden",
+    "toastDeleted": "Benutzer gelöscht",
+    "toastDeleteFailed": "Benutzer konnte nicht gelöscht werden"
   },
   "metric": {
     "vllm:num_requests_running": "Aktive Anfragen",

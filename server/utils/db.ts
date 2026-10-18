@@ -3,19 +3,27 @@ import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { loadConfig } from './config.ts'
 
+export type UserRole = 'admin' | 'user'
+
 export interface ServerRow {
   id: number
   name: string
   url: string
   enabled: number
   created_at: number
+  /** user who added the server; null for pre-roles rows and auth-disabled setups */
+  created_by: number | null
 }
 
 export interface UserRow {
   id: number
   username: string
   pass_hash: string
-  role: string
+  role: UserRole
+  /** user signed up through GitLab OAuth */
+  gitlab: number
+  /** access frozen by an admin: cannot sign in, existing sessions die */
+  disabled: number
   created_at: number
   last_login: number | null
 }
@@ -25,8 +33,9 @@ export interface SessionUserRow {
   user_id: number
   expires_at: number
   username: string
-  role: string
+  role: UserRole
   pass_hash: string
+  disabled: number
 }
 
 export interface Settings {
@@ -53,7 +62,8 @@ CREATE TABLE IF NOT EXISTS servers (
   name       TEXT NOT NULL,
   url        TEXT NOT NULL UNIQUE,
   enabled    INTEGER NOT NULL DEFAULT 1,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  created_by INTEGER
 );
 CREATE TABLE IF NOT EXISTS server_status (
   server_id INTEGER NOT NULL,
@@ -66,6 +76,8 @@ CREATE TABLE IF NOT EXISTS users (
   username   TEXT NOT NULL UNIQUE,
   pass_hash  TEXT NOT NULL,
   role       TEXT NOT NULL DEFAULT 'admin',
+  gitlab     INTEGER NOT NULL DEFAULT 0,
+  disabled   INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,
   last_login INTEGER
 );
@@ -110,6 +122,12 @@ CREATE TABLE IF NOT EXISTS rollup_daily (
 
 let db: Database.Database | null = null
 
+/** Add a column to an existing table (no migration system - keep this idempotent). */
+function ensureColumn (db: Database.Database, table: string, column: string, ddl: string): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
+  if (!cols.some(c => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddl}`)
+}
+
 export function useDb (): Database.Database {
   if (!db) {
     // config.json db.path (relative resolves from the project root);
@@ -120,6 +138,12 @@ export function useDb (): Database.Database {
     db.pragma('journal_mode = WAL')
     db.pragma('synchronous = NORMAL')
     db.exec(SCHEMA)
+    // upgrades for databases created before the column existed
+    ensureColumn(db, 'servers', 'created_by', 'INTEGER')
+    ensureColumn(db, 'users', 'gitlab', 'INTEGER NOT NULL DEFAULT 0')
+    ensureColumn(db, 'users', 'disabled', 'INTEGER NOT NULL DEFAULT 0')
+    // an empty pass_hash could only ever come from the GitLab OAuth sign-up
+    db.prepare("UPDATE users SET gitlab = 1 WHERE pass_hash = '' AND gitlab = 0").run()
   }
   return db
 }
@@ -163,11 +187,40 @@ export function getUserByUsername (username: string): UserRow | null {
   return useDb().prepare('SELECT * FROM users WHERE username = ?').get(username) as UserRow | null
 }
 
-export function createUser (username: string, passHash: string): UserRow {
+/** All users without the password hash, for the admin table. */
+export function listUsers (): Array<Omit<UserRow, 'pass_hash'>> {
+  return useDb()
+    .prepare('SELECT id, username, role, gitlab, disabled, created_at, last_login FROM users ORDER BY username COLLATE NOCASE')
+    .all() as Array<Omit<UserRow, 'pass_hash'>>
+}
+
+export function createUser (username: string, passHash: string, role: UserRole, gitlab: boolean): UserRow {
   const info = useDb()
-    .prepare('INSERT INTO users (username, pass_hash, role, created_at) VALUES (?, ?, ?, ?)')
-    .run(username, passHash, 'admin', Date.now())
+    .prepare('INSERT INTO users (username, pass_hash, role, gitlab, created_at) VALUES (?, ?, ?, ?, ?)')
+    .run(username, passHash, role, gitlab ? 1 : 0, Date.now())
   return getUserById(Number(info.lastInsertRowid))!
+}
+
+export function updateUser (userId: number, patch: { role?: UserRole, disabled?: boolean, passHash?: string }): void {
+  const sets: string[] = []
+  const args: Array<string | number> = []
+  if (patch.role !== undefined) { sets.push('role = ?'); args.push(patch.role) }
+  if (patch.disabled !== undefined) { sets.push('disabled = ?'); args.push(patch.disabled ? 1 : 0) }
+  if (patch.passHash !== undefined) { sets.push('pass_hash = ?'); args.push(patch.passHash) }
+  if (sets.length === 0) return
+  args.push(userId)
+  useDb().prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...args)
+}
+
+export function deleteUser (userId: number): void {
+  useDb().prepare('DELETE FROM users WHERE id = ?').run(userId)
+}
+
+/** Admins who can still sign in - there must always be at least one. */
+export function countActiveAdmins (): number {
+  return (useDb()
+    .prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND disabled = 0")
+    .get() as { n: number }).n
 }
 
 export function updatePassword (userId: number, passHash: string): void {
@@ -188,7 +241,7 @@ export function createSession (tokenHash: string, userId: number, expiresAt: num
 
 export function getSessionUser (tokenHash: string): SessionUserRow | null {
   return useDb()
-    .prepare(`SELECT s.token_hash, s.user_id, s.expires_at, u.username, u.role, u.pass_hash
+    .prepare(`SELECT s.token_hash, s.user_id, s.expires_at, u.username, u.role, u.pass_hash, u.disabled
               FROM sessions s JOIN users u ON u.id = s.user_id
               WHERE s.token_hash = ?`)
     .get(tokenHash) as SessionUserRow | null

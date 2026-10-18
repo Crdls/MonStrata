@@ -3,6 +3,7 @@
     "dashboard": "仪表盘",
     "heatmap": "热力图",
     "servers": "服务器",
+    "users": "用户",
     "settings": "设置"
   },
   "common": {
@@ -68,7 +69,9 @@
     "toastParsed": "已解析 {n} 条序列",
     "toastUnreachable": "{name}：无法访问",
     "toastPingFailed": "测试请求失败",
-    "toastRemoved": "服务器已删除"
+    "toastRemoved": "服务器已删除",
+    "owner": "创建者：{name}",
+    "ownerUnknown": "创建者未知"
   },
   "server": {
     "noData": "该时间范围内无数据",
@@ -168,6 +171,37 @@
     "gitlabForbidden": "您的 GitLab 账户无权登录此处",
     "setPassword": "设置密码",
     "setPasswordHint": "您通过 GitLab 登录，尚未设置本地密码。设置后即可在不依赖 GitLab 的情况下登录。"
+  },
+  "users": {
+    "title": "用户",
+    "subtitle": "允许登录的账户。角色、密码和访问权限在此管理。",
+    "username": "用户名",
+    "you": "您",
+    "gitlab": "GitLab",
+    "role": "角色",
+    "roleAdmin": "管理员",
+    "roleUser": "普通用户",
+    "status": "状态",
+    "active": "正常",
+    "frozen": "已冻结",
+    "created": "创建时间",
+    "lastLogin": "最近登录",
+    "actions": "操作",
+    "edit": "编辑",
+    "editTitle": "编辑 {name}",
+    "selfHint": "不能降低或冻结您自己的账户。",
+    "frozenHelp": "被冻结的用户无法登录；其活动会话将立即失效。",
+    "newPassword": "新密码",
+    "newPasswordHelp": "留空表示保留当前密码。该用户的其他会话将被退出。",
+    "confirmNewPassword": "确认新密码",
+    "empty": "暂无用户。",
+    "delete": "删除",
+    "confirmTitle": "删除用户",
+    "confirmText": "确定删除 {name} 吗？其创建的服务器将继续运行。此操作无法撤销。",
+    "toastSaved": "用户已保存",
+    "toastSaveFailed": "保存用户失败",
+    "toastDeleted": "用户已删除",
+    "toastDeleteFailed": "删除用户失败"
   },
   "metric": {
     "vllm:num_requests_running": "运行中请求",

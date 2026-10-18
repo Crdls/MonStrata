@@ -1,6 +1,7 @@
 export interface AuthUser {
   id: number
   username: string
+  role: 'admin' | 'user'
   /** false for GitLab-created users who have not set a local password yet */
   hasPassword: boolean
 }
@@ -15,6 +16,7 @@ export interface AuthStatus {
 export function useAuth () {
   // cached per page load by the global route middleware (transferred via SSR payload)
   const status = useState<AuthStatus | null>('authStatus', () => null)
+  const isAdmin = computed(() => status.value?.user?.role === 'admin')
 
   async function load (force = false): Promise<AuthStatus | null> {
     if (status.value && !force) return status.value
@@ -37,5 +39,5 @@ export function useAuth () {
     location.assign('/login')
   }
 
-  return { status, load, signOut }
+  return { status, isAdmin, load, signOut }
 }

@@ -3,6 +3,7 @@
     "dashboard": "Dashboard",
     "heatmap": "Heatmap",
     "servers": "Servers",
+    "users": "Users",
     "settings": "Settings"
   },
   "common": {
@@ -68,7 +69,9 @@
     "toastParsed": "{n} series parsed",
     "toastUnreachable": "{name}: unreachable",
     "toastPingFailed": "Ping request failed",
-    "toastRemoved": "Server removed"
+    "toastRemoved": "Server removed",
+    "owner": "by {name}",
+    "ownerUnknown": "unknown owner"
   },
   "server": {
     "noData": "No data in this range",
@@ -168,6 +171,37 @@
     "gitlabForbidden": "Your GitLab account is not allowed to sign in here",
     "setPassword": "Set password",
     "setPasswordHint": "You signed in via GitLab and have no local password yet. Set one to also sign in without GitLab."
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Accounts allowed to sign in. Roles, passwords and access are managed here.",
+    "username": "Username",
+    "you": "you",
+    "gitlab": "GitLab",
+    "role": "Role",
+    "roleAdmin": "Admin",
+    "roleUser": "User",
+    "status": "Status",
+    "active": "active",
+    "frozen": "frozen",
+    "created": "Created",
+    "lastLogin": "Last sign-in",
+    "actions": "Actions",
+    "edit": "Edit",
+    "editTitle": "Edit {name}",
+    "selfHint": "You cannot demote or freeze your own account.",
+    "frozenHelp": "A frozen user cannot sign in; their active sessions are dropped immediately.",
+    "newPassword": "New password",
+    "newPasswordHelp": "Leave empty to keep the current password. The user's other sessions are signed out.",
+    "confirmNewPassword": "Confirm new password",
+    "empty": "No users yet.",
+    "delete": "Delete",
+    "confirmTitle": "Delete user",
+    "confirmText": "Delete {name}? Servers they created keep working. This cannot be undone.",
+    "toastSaved": "User saved",
+    "toastSaveFailed": "Could not save user",
+    "toastDeleted": "User deleted",
+    "toastDeleteFailed": "Could not delete user"
   },
   "metric": {
     "vllm:num_requests_running": "Running requests",

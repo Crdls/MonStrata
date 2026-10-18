@@ -27,7 +27,7 @@
   新增语言 = 一个 JSON 文件 + `nuxt.config.ts` 中的一条配置。
 - **可选的身份验证** — 在 `config.json` 中开启 `auth.enabled`；
   账户存储在 SQLite 中，密码使用 scrypt 哈希，登录有效期 30 天并在使用时
-  自动续期。开启验证且尚无任何用户时，应用会打开创建首个管理员账户的界面。
+  自动续期，角色分为 `admin` 和 `user`。开启验证且尚无任何用户时，应用会打开创建首个管理员账户的界面。
   也可以通过局域网内的 GitLab 服务器登录（OAuth2，见下文「身份验证」）。
 
 ## 运行
@@ -70,6 +70,12 @@ node .output/server/index.mjs
 - 尚无任何用户 → 应用打开创建首个管理员账户的界面；
 - 所有 API 请求和 WebSocket 都需要 `monstrata_session` cookie
   （HttpOnly，密码为 SQLite 中的 scrypt 哈希，会话有效期 30 天并在使用时续期）；
+- 两种角色：`admin` 和 `user`；管理员可见「用户」页面，可在其中更换角色、
+  为任何用户指派新密码（无需知道旧密码）、冻结账户（被冻结者无法登录，
+  其活动会话立即失效）以及删除用户 — 最后一名活跃管理员不能被降级、冻结
+  或删除，任何人都不能降级或冻结自己；
+- 服务器会记住创建者：只有创建者和管理员可以编辑、删除和启停服务器
+  （验证关闭时所有人照旧可操作）；
 - 页眉可退出登录；在设置页面可修改自己的密码
   （当前会话保持登录，其他会话将被退出）。
 
@@ -98,8 +104,10 @@ node .output/server/index.mjs
 ```
 
 - 登录页会出现「使用 GitLab 登录」按钮；
-- 首次通过 GitLab 登录时会自动创建同名本地用户（无密码）；该用户可在
-  设置页面设置本地密码（此时表单只要求新密码，不要求当前密码），以便在
+- 首次通过 GitLab 登录时创建同名本地用户并赋予管理员角色（仅在所有用户
+  尚不存在时可能发生）；之后的 GitLab 登录创建普通 `user` 账户 — 由管理员
+  在「用户」页面为其提权；新的 GitLab 用户带有「GitLab」徽标，没有密码，
+  可在设置页面设置本地密码（此时表单只要求新密码，不要求当前密码），以便在
   GitLab 不可用时仍能登录；
 - `allowedGroups`（可选）只允许这些 GitLab 组的成员登录；子组成员同样
   有效；留空则该 GitLab 的任何用户都可登录；
@@ -131,16 +139,16 @@ node scripts/reset-password.mjs <用户名或 id> [新密码]
 
 ```
 app/            Vue 3 + Nuxt UI 前端
-  pages/        仪表盘、服务器详情、热力图、服务器列表、设置、登录
+  pages/        仪表盘、服务器详情、热力图、服务器列表、用户、设置、登录
   components/   ServerCard、MetricChart (uPlot)、LoadHeatmap 等
   plugins/live.ts  共享状态 + WebSocket 客户端
 i18n/locales/   语言词典：en、ru、de、es、fr、zh
 server/
   middleware/   auth.ts — /api 的会话关卡（由 config.json 开启）
   utils/        Prometheus 解析器、SQLite、指标目录、采集器、汇总、认证原语、
-                GitLab OAuth 辅助
+                权限规则、GitLab OAuth 辅助
   plugins/      后台循环（scrape、rollups）
-  api/          servers CRUD、live、range、heatmap、settings、auth
+  api/          servers CRUD、live、range、heatmap、settings、auth、users
   routes/_ws.ts WebSocket 端点
 scripts/        reset-password.mjs — 密码恢复（无需邮箱）
 test/           基于真实 /metrics 固定数据的解析器测试 + 认证测试
@@ -148,12 +156,13 @@ test/           基于真实 /metrics 固定数据的解析器测试 + 认证测
 
 ## API
 
-- `GET|POST /api/servers`、`PATCH|DELETE /api/servers/:id`、`POST /api/servers/:id/ping`
+- `GET|POST /api/servers`、`PATCH|DELETE /api/servers/:id`、`POST /api/servers/:id/ping`（PATCH/DELETE：开启验证后仅创建者或管理员可调用）
 - `GET /api/live` — 所有服务器的当前快照
 - `GET /api/range?serverId&metric&from&to` — 指标历史（raw/hourly/daily — 数据源自动选择）
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — 服务器 × 时间桶矩阵
 - `GET|PUT /api/settings`
 - `/api/auth/status|setup|login|logout|password`、`/api/auth/gitlab/start|callback` — 身份验证（公开：status、setup、login、logout、gitlab/*）
+- `GET /api/users`、`PATCH|DELETE /api/users/:id` — 用户管理（仅管理员；PATCH 接受 `role`、`disabled`、`password`）
 - `WS /_ws` — 推送快照
 
 ## 测试

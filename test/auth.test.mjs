@@ -6,6 +6,9 @@ import {
 import {
   authorizeUrl, isGroupAllowed, newOAuthState, pathsFromGroupsResponse, tokenFromResponse, usernameFromUserResponse
 } from '../server/utils/gitlab.ts'
+import {
+  canManageServer, demotesActiveAdmin
+} from '../server/utils/permissions.ts'
 
 let failed = 0
 function check (name, cond) {
@@ -59,6 +62,20 @@ check('isGroupAllowed matches exact group', isGroupAllowed(['ops'], ['ops', 'dev
 check('isGroupAllowed inherits from subgroup', isGroupAllowed(['ops'], ['ops/api']))
 check('isGroupAllowed is case-insensitive', isGroupAllowed(['Ops'], ['ops']))
 check('isGroupAllowed rejects outsiders', !isGroupAllowed(['ops'], ['dev']) && !isGroupAllowed(['ops'], ['opos']) && !isGroupAllowed(['ops'], []))
+
+check('canManageServer: auth off means everybody', canManageServer(false, {}, { created_by: 7 }))
+check('canManageServer: admin manages any server', canManageServer(true, { userId: 1, userRole: 'admin' }, { created_by: 9 }))
+check('canManageServer: creator manages own server', canManageServer(true, { userId: 5, userRole: 'user' }, { created_by: 5 }))
+check('canManageServer: outsider user denied', !canManageServer(true, { userId: 5, userRole: 'user' }, { created_by: 6 }))
+check('canManageServer: unknown author is admin-only', !canManageServer(true, { userId: 5, userRole: 'user' }, { created_by: null }))
+
+const activeAdmin = { role: 'admin', disabled: 0 }
+check('demotesActiveAdmin: demote counts', demotesActiveAdmin(activeAdmin, { role: 'user' }))
+check('demotesActiveAdmin: freeze counts', demotesActiveAdmin(activeAdmin, { disabled: true }))
+check('demotesActiveAdmin: delete treated as freeze', demotesActiveAdmin(activeAdmin, { disabled: true }))
+check('demotesActiveAdmin: rename/password does not demote', !demotesActiveAdmin(activeAdmin, {}))
+check('demotesActiveAdmin: plain user is fine', !demotesActiveAdmin({ role: 'user', disabled: 0 }, { disabled: true }))
+check('demotesActiveAdmin: already frozen admin is fine', !demotesActiveAdmin({ role: 'admin', disabled: 1 }, { role: 'user' }))
 
 console.log(failed === 0 ? '\nAll checks passed' : `\n${failed} checks FAILED`)
 process.exit(failed === 0 ? 0 : 1)

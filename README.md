@@ -30,9 +30,10 @@ dashboard, metric history and a load heatmap with selectable period.
   `nuxt.config.ts`.
 - **Optional authentication** — enable `auth.enabled` in `config.json`;
   accounts live in SQLite with scrypt-hashed passwords and 30-day sliding
-  sessions. With auth on and no users yet, the app opens a first-run screen
-  to create the admin account. Users can also sign in through a GitLab
-  server on the LAN (OAuth2, see [Authentication](#authentication)).
+  sessions, with `admin`/`user` roles. With auth on and no users yet, the app
+  opens a first-run screen to create the admin account. Users can also sign
+  in through a GitLab server on the LAN (OAuth2, see
+  [Authentication](#authentication)).
 
 ## Running
 
@@ -77,6 +78,14 @@ With auth enabled:
 - every API route and the WebSocket require the `monstrata_session` cookie
   (HttpOnly, scrypt-hashed passwords in SQLite, sessions live 30 days and
   slide on use);
+- two roles: `admin` and `user`; admins get a **Users** page where they can
+  change roles, assign a new password to anybody (without knowing the old
+  one), freeze accounts (frozen users cannot sign in and their active
+  sessions are dropped) and delete users — the last active admin can never
+  be demoted, frozen or deleted, and nobody can demote or freeze themselves;
+- servers remember who added them: editing, deleting and toggling a server
+  is allowed to its creator and to admins only (with auth off everybody
+  may do everything, as before);
 - sign out in the header; the Settings page can change your own password
   (the current session stays signed in, others are signed out).
 
@@ -107,9 +116,11 @@ GitLab server on your LAN with OAuth2 (authorization code, scope
 
 - the login page gains a "Sign in with GitLab" button;
 - the first GitLab sign-in creates a local user with the same username and
-  no password — that user can set a local password in Settings (the card
-  asks for a new password only, no current one) to keep signing in when
-  GitLab is down;
+  the admin role (it can only happen while no users exist); later GitLab
+  sign-ins are created as plain `user` accounts — an admin promotes them on
+  the Users page; new GitLab users carry a "GitLab" badge, have no password
+  and can set a local one in Settings (the card asks for a new password
+  only, no current one) to keep signing in when GitLab is down;
 - `allowedGroups` (optional) restricts sign-in to members of those GitLab
   groups; members of subgroups count too; an empty list lets any GitLab
   user of that server sign in;
@@ -142,16 +153,16 @@ TTFT / ITL / E2E, engine and memory busy percentages.
 
 ```
 app/            Vue 3 + Nuxt UI frontend
-  pages/        dashboard, server, heatmap, servers, settings, login
+  pages/        dashboard, server, heatmap, servers, users, settings, login
   components/   ServerCard, MetricChart (uPlot), LoadHeatmap, ...
   plugins/live.ts  shared state + WebSocket client
 i18n/locales/   dictionaries: en, ru, de, es, fr, zh
 server/
   middleware/   auth.ts - session gate for /api (opt-in via config.json)
   utils/        Prometheus parser, SQLite, metric catalog, scraper, rollups,
-                auth primitives, GitLab OAuth helpers
+                auth primitives, permission rules, GitLab OAuth helpers
   plugins/      background loops (scrape, rollups)
-  api/          servers CRUD, live, range, heatmap, settings, auth
+  api/          servers CRUD, live, range, heatmap, settings, auth, users
   routes/_ws.ts WebSocket endpoint
 scripts/        reset-password.mjs - lost password recovery (no email)
 test/           parser test on real /metrics fixtures + auth helper tests
@@ -159,12 +170,13 @@ test/           parser test on real /metrics fixtures + auth helper tests
 
 ## API
 
-- `GET|POST /api/servers`, `PATCH|DELETE /api/servers/:id`, `POST /api/servers/:id/ping`
+- `GET|POST /api/servers`, `PATCH|DELETE /api/servers/:id`, `POST /api/servers/:id/ping` (PATCH/DELETE: creator or admin only when auth is on)
 - `GET /api/live` — current snapshots of all servers
 - `GET /api/range?serverId&metric&from&to` — metric history (raw/hourly/daily — the source is picked automatically)
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — servers × buckets matrix
 - `GET|PUT /api/settings`
 - `/api/auth/status|setup|login|logout|password`, `/api/auth/gitlab/start|callback` — auth (public: status, setup, login, logout, gitlab/*)
+- `GET /api/users`, `PATCH|DELETE /api/users/:id` — user management (admins only; PATCH takes `role`, `disabled`, `password`)
 - `WS /_ws` — push snapshots
 
 ## Tests

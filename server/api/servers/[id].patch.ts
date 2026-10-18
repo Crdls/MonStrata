@@ -1,12 +1,14 @@
 import { useDb, type ServerRow } from '../../utils/db'
 import { broadcast, scrapeServer, validateBaseUrl } from '../../utils/scrape'
 import { forgetServerState } from '../../utils/runtime'
+import { assertCanManageServer } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
   const db = useDb()
   const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(id) as ServerRow | undefined
   if (!server) throw createError({ statusCode: 404, statusMessage: 'server not found' })
+  assertCanManageServer(event, server)
 
   const body = await readBody<{ name?: string, url?: string, enabled?: boolean }>(event)
   const name = body?.name?.trim() || server.name

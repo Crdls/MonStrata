@@ -5,6 +5,8 @@ interface ServerRow {
   url: string
   enabled: boolean
   createdAt: number
+  createdBy: number | null
+  createdByName: string | null
   up: boolean | null
   lastScrape: number | null
   error: string | null
@@ -16,6 +18,15 @@ const { data: servers, refresh } = useFetch<ServerRow[]>('/api/servers', {
 })
 const toast = useToast()
 const { t } = useI18n()
+const { status } = useAuth()
+
+// only the creator or an admin may change a server (the API enforces it too)
+function canManage (server: ServerRow): boolean {
+  if (!status.value?.authEnabled) return true
+  const user = status.value.user
+  if (user?.role === 'admin') return true
+  return server.createdBy != null && server.createdBy === user?.id
+}
 
 const formOpen = ref(false)
 const editing = ref<ServerRow | null>(null)
@@ -141,6 +152,12 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
               <NuxtLink :to="`/servers/${server.id}`" class="font-medium hover:text-primary">
                 {{ server.name }}
               </NuxtLink>
+              <div v-if="server.createdByName" class="text-xs text-dimmed">
+                {{ t('servers.owner', { name: server.createdByName }) }}
+              </div>
+              <div v-else-if="server.createdBy" class="text-xs text-dimmed">
+                {{ t('servers.ownerUnknown') }}
+              </div>
             </td>
             <td class="py-2.5 pr-3 text-muted max-w-64 truncate">
               {{ server.url }}
@@ -170,6 +187,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
             </td>
             <td class="py-2.5 pr-3 text-center">
               <USwitch
+                v-if="canManage(server)"
                 :model-value="server.enabled"
                 size="sm"
                 @update:model-value="toggle(server, $event as boolean)"
@@ -186,10 +204,10 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
               >
                 {{ t('servers.test') }}
               </UButton>
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-pencil" @click="openEdit(server)">
+              <UButton v-if="canManage(server)" size="xs" color="neutral" variant="ghost" icon="i-lucide-pencil" @click="openEdit(server)">
                 {{ t('servers.edit') }}
               </UButton>
-              <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" @click="deleteTarget = server">
+              <UButton v-if="canManage(server)" size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" @click="deleteTarget = server">
                 {{ t('servers.delete') }}
               </UButton>
             </td>

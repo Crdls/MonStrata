@@ -2,7 +2,7 @@
 import type { Locale } from '#i18n'
 
 const route = useRoute()
-const { status, signOut } = useAuth()
+const { status, isAdmin, signOut } = useAuth()
 const authUser = computed(() => (status.value?.authEnabled ? status.value.user : null))
 // use setLocale (not a direct locale write) so lazy messages are loaded
 // and the detectBrowserLanguage cookie is updated
@@ -12,12 +12,16 @@ const selectedLocale = computed({
   set: (value: string) => { void setLocale(value as Locale) }
 })
 
-const nav = [
+// the user table is only listed for admins while auth is on
+const nav = computed(() => [
   { to: '/', icon: 'i-lucide-layout-dashboard', label: 'nav.dashboard' },
   { to: '/heatmap', icon: 'i-lucide-grid-3x3', label: 'nav.heatmap' },
   { to: '/servers', icon: 'i-lucide-server', label: 'nav.servers' },
+  ...(status.value?.authEnabled && isAdmin.value
+    ? [{ to: '/users', icon: 'i-lucide-users', label: 'nav.users' }]
+    : []),
   { to: '/settings', icon: 'i-lucide-settings', label: 'nav.settings' }
-]
+])
 
 // language names are shown in their own language on purpose
 const localeItems = [
