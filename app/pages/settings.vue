@@ -12,9 +12,11 @@ const { data, refresh } = useFetch<Settings>('/api/settings', {
 })
 const toast = useToast()
 const { t } = useI18n()
-const { status } = useAuth()
+const { status, isAdmin } = useAuth()
 
 const authed = computed(() => Boolean(status.value?.authEnabled && status.value?.user))
+// background intervals are an admin concern while auth is on
+const canEditIntervals = computed(() => !status.value?.authEnabled || isAdmin.value)
 // GitLab sign-ins have no local password yet: the card turns into first-time setup
 const hasPassword = computed(() => status.value?.user?.hasPassword !== false)
 
@@ -93,9 +95,9 @@ const neutralColor = computed({
 <template>
   <div class="max-w-2xl">
     <h1 class="text-xl font-semibold mb-1">{{ t('settings.title') }}</h1>
-    <p class="text-sm text-muted mb-5">{{ t('settings.description') }}</p>
+    <p v-if="canEditIntervals" class="text-sm text-muted mb-5">{{ t('settings.description') }}</p>
 
-    <UCard>
+    <UCard v-if="canEditIntervals">
       <form class="space-y-5" @submit.prevent="save">
         <UFormField :label="t('settings.scrape')" :help="t('settings.scrapeHelp')">
           <UInputNumber v-model="form.scrapeIntervalS" :min="2" :max="600" :step="1" class="w-40" />

@@ -86,6 +86,8 @@ With auth enabled:
 - servers remember who added them: editing, deleting and toggling a server
   is allowed to its creator and to admins only (with auth off everybody
   may do everything, as before);
+- the interval and retention settings on the Settings page are editable by
+  admins only (the password and appearance cards stay available to everyone);
 - sign out in the header; the Settings page can change your own password
   (the current session stays signed in, others are signed out).
 
@@ -174,7 +176,7 @@ test/           parser test on real /metrics fixtures + auth helper tests
 - `GET /api/live` — current snapshots of all servers
 - `GET /api/range?serverId&metric&from&to` — metric history (raw/hourly/daily — the source is picked automatically)
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — servers × buckets matrix
-- `GET|PUT /api/settings`
+- `GET|PUT /api/settings` (`PUT`: admin only when auth is on)
 - `/api/auth/status|setup|login|logout|password`, `/api/auth/gitlab/start|callback` — auth (public: status, setup, login, logout, gitlab/*)
 - `GET /api/users`, `PATCH|DELETE /api/users/:id` — user management (admins only; PATCH takes `role`, `disabled`, `password`)
 - `WS /_ws` — push snapshots

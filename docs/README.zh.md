@@ -76,6 +76,8 @@ node .output/server/index.mjs
   或删除，任何人都不能降级或冻结自己；
 - 服务器会记住创建者：只有创建者和管理员可以编辑、删除和启停服务器
   （验证关闭时所有人照旧可操作）；
+- 设置页面中的轮询间隔与数据保留仅管理员可修改（修改密码和外观卡片
+  所有人可用）；
 - 页眉可退出登录；在设置页面可修改自己的密码
   （当前会话保持登录，其他会话将被退出）。
 
@@ -160,7 +162,7 @@ test/           基于真实 /metrics 固定数据的解析器测试 + 认证测
 - `GET /api/live` — 所有服务器的当前快照
 - `GET /api/range?serverId&metric&from&to` — 指标历史（raw/hourly/daily — 数据源自动选择）
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — 服务器 × 时间桶矩阵
-- `GET|PUT /api/settings`
+- `GET|PUT /api/settings`（`PUT`：开启验证后仅管理员）
 - `/api/auth/status|setup|login|logout|password`、`/api/auth/gitlab/start|callback` — 身份验证（公开：status、setup、login、logout、gitlab/*）
 - `GET /api/users`、`PATCH|DELETE /api/users/:id` — 用户管理（仅管理员；PATCH 接受 `role`、`disabled`、`password`）
 - `WS /_ws` — 推送快照

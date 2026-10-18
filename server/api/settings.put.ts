@@ -1,3 +1,5 @@
+import { requireAdmin } from '../utils/auth'
+import { loadConfig } from '../utils/config'
 import { saveSettings, type Settings } from '../utils/db'
 import { scheduleRollups, scheduleScrape } from '../utils/scheduler'
 
@@ -8,7 +10,9 @@ const LIMITS: Record<keyof Settings, [number, number]> = {
   hourlyRetentionD: [7, 3650]
 }
 
+// scheduling knobs are admin-only while auth is on (auth off = trusted LAN as before)
 export default defineEventHandler(async (event) => {
+  if (loadConfig().auth.enabled) requireAdmin(event)
   const body = await readBody<Partial<Settings>>(event)
   const patch: Partial<Settings> = {}
   for (const key of Object.keys(LIMITS) as Array<keyof Settings>) {
