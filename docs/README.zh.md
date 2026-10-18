@@ -2,8 +2,8 @@
 
 [English](../README.md) · [Русский](README.ru.md) · **中文**
 
-**Strata** 推理引擎的 Web 监控系统：多服务器、实时仪表盘、
-指标历史，以及可选时间范围的负载热力图。
+**[Strata](https://github.com/Niko1221/Strata)** 推理引擎的 Web
+监控系统：多服务器、实时仪表盘、指标历史，以及可选时间范围的负载热力图。
 
 ![仪表盘](images/dashboard-zh.png)
 
@@ -37,6 +37,8 @@
 ## 运行
 
 ```sh
+git clone https://github.com/Crdls/MonStrata.git
+cd MonStrata
 npm install
 npm run dev        # http://localhost:3003
 ```
@@ -193,3 +195,25 @@ node test/config.test.mjs
   会返回 JSON — 采集器始终发送该请求头。
 - 身份验证默认关闭（本服务面向受信任的本地网络）；开启后，除认证引导接口外，
   所有 `/api` 和 `/_ws` 都需要有效的会话 cookie。
+
+## 致谢
+
+向 [Niko1221](https://github.com/Niko1221/Strata) 致以最深的敬意 —— 他是
+[Strata](https://github.com/Niko1221/Strata) 推理引擎的作者，本监控观察的正是它：
+没有它，这里就没有任何图表可看。
+
+本监控建立在这些开源项目之上：
+
+- [Nuxt](https://nuxt.com/) 4（基于 [Vue](https://vuejs.org/) 3，
+  由 Nitro 提供服务）— 界面、API 路由与 WebSocket；
+- [Nuxt UI](https://ui.nuxt.com/) 与 [Tailwind CSS](https://tailwindcss.com/)
+  — 组件与样式，[Lucide](https://lucide.dev/) 图标；
+- [uPlot](https://github.com/leeoniya/uPlot) — 历史图表；
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — SQLite 存储；
+- [Nuxt i18n](https://i18n.nuxtjs.org/) — 六种界面语言；
+- [TypeScript](https://www.typescriptlang.org/) — 以上全部。
+
+## 许可证
+
+本项目按 [MIT 许可证](../LICENSE) 条款发布 — 完整文本见仓库根目录下的
+[`LICENSE`](../LICENSE) 文件。

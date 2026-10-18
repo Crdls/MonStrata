@@ -2,8 +2,9 @@
 
 **English** · [Русский](docs/README.ru.md) · [中文](docs/README.zh.md)
 
-Web monitoring for **Strata** inference engines: several servers, a live
-dashboard, metric history and a load heatmap with selectable period.
+Web monitoring for **[Strata](https://github.com/Niko1221/Strata)** inference
+engines: several servers, a live dashboard, metric history and a load heatmap
+with selectable period.
 
 ![Dashboard](docs/images/dashboard-en.png)
 
@@ -42,6 +43,8 @@ dashboard, metric history and a load heatmap with selectable period.
 ## Running
 
 ```sh
+git clone https://github.com/Crdls/MonStrata.git
+cd MonStrata
 npm install
 npm run dev        # http://localhost:3003
 ```
@@ -209,3 +212,25 @@ node test/config.test.mjs
 - Authentication is off by default (the service is meant for a trusted local
   network); when enabled, all `/api` routes except the auth bootstrap ones
   and `/_ws` require a valid session cookie.
+
+## Acknowledgments
+
+Genuine, deep respect to [Niko1221](https://github.com/Niko1221/Strata) for
+[Strata](https://github.com/Niko1221/Strata) — the engine this monitor watches:
+without it there would simply be nothing to chart here.
+
+The monitor itself is assembled from open-source parts:
+
+- [Nuxt](https://nuxt.com/) 4 (on [Vue](https://vuejs.org/) 3, served by Nitro)
+  — the UI app, the API routes and the WebSocket endpoint;
+- [Nuxt UI](https://ui.nuxt.com/) and [Tailwind CSS](https://tailwindcss.com/)
+  — components and styling, with [Lucide](https://lucide.dev/) icons;
+- [uPlot](https://github.com/leeoniya/uPlot) — the history charts;
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — SQLite storage;
+- [Nuxt i18n](https://i18n.nuxtjs.org/) — the six interface languages;
+- [TypeScript](https://www.typescriptlang.org/) — all of the above.
+
+## License
+
+Released under the terms of the [MIT License](LICENSE) — the full text lives
+in the [`LICENSE`](LICENSE) file at the repository root.

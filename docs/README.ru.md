@@ -2,8 +2,9 @@
 
 [English](../README.md) · **Русский** · [中文](README.zh.md)
 
-Web-мониторинг движков инференса **Strata**: несколько серверов, live-дашборд,
-история метрик и тепловая карта загрузки с выбором периода.
+Web-мониторинг движков инференса **[Strata](https://github.com/Niko1221/Strata)**:
+несколько серверов, live-дашборд, история метрик и тепловая карта загрузки
+с выбором периода.
 
 ![Дашборд](images/dashboard-ru.png)
 
@@ -41,6 +42,8 @@ Web-мониторинг движков инференса **Strata**: неск�
 ## Запуск
 
 ```sh
+git clone https://github.com/Crdls/MonStrata.git
+cd MonStrata
 npm install
 npm run dev        # http://localhost:3003
 ```
@@ -208,3 +211,25 @@ node test/config.test.mjs
 - Авторизация по умолчанию выключена (сервис для доверенной сети); когда
   включена — все `/api` кроме бутстрапа авторизации и `/_ws` требуют
   валидную cookie сессии.
+
+## Благодарности
+
+Огромный респет [Niko1221](https://github.com/Niko1221/Strata) — автору движжка
+[Strata](https://github.com/Niko1221/Strata), за которым этот монитор и следит:
+без него здесь нечего было бы рисовать на графиках.
+
+Сам монитор собран из открытого ПО:
+
+- [Nuxt](https://nuxt.com/) 4 (на [Vue](https://vuejs.org/) 3, отдаётся Nitro) —
+  интерфейс, API-роуты и WebSocket;
+- [Nuxt UI](https://ui.nuxt.com/) и [Tailwind CSS](https://tailwindcss.com/) —
+  компоненты и стили, иконки [Lucide](https://lucide.dev/);
+- [uPlot](https://github.com/leeoniya/uPlot) — графики истории;
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — хранилище SQLite;
+- [Nuxt i18n](https://i18n.nuxtjs.org/) — шесть языков интерфейса;
+- [TypeScript](https://www.typescriptlang.org/) — для всего перечисленного выше.
+
+## Лицензия
+
+Проект распространяется на условиях [лицензии MIT](../LICENSE) — полный текст
+в файле [`LICENSE`](../LICENSE) в корне репозитория.
