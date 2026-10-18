@@ -114,9 +114,12 @@ GitLab-сервер в локальной сети по OAuth2 (authorization co
 `read_user`) — никакой отдельной IdP-службы не нужно:
 
 1. В GitLab создайте OAuth-приложение (в профиле → «Приложения», или в
-   Admin Area → «Приложения», чтобы предложить его всем) с redirect URI
-   `http://<хост-monstrata>:3003/api/auth/gitlab/callback` и областью
-   `read_user`;
+   Admin Area → «Приложения», чтобы предложить его всем). В поле redirect
+   URI нужно указать **полный URL callback-эндпоинта MonStrata**:
+   `http://<хост-monstrata>:3003/api/auth/gitlab/callback`. GitLab сверяет
+   эту строку посимвольно — одного хоста `http://<хост-monstrata>:3003`
+   *недостаточно*: GitLab вернёт код на `/`, где его никто не обрабатывает,
+   и вас просто выбросит на страницу входа без ошибки. Область — `read_user`;
 2. внесите id/secret приложения в `config.json`:
 
 ```json
@@ -127,7 +130,9 @@ GitLab-сервер в локальной сети по OAuth2 (authorization co
     "baseUrl": "http://gitlab.lan",
     "clientId": "…",
     "clientSecret": "…",
-    "allowedGroups": []
+    "allowedGroups": [],
+    "caCert": "",
+    "insecureTls": false
   }
 }
 ```
@@ -144,7 +149,16 @@ GitLab-сервер в локальной сети по OAuth2 (authorization co
   групп GitLab; участники подгрупп тоже подходят; пустой список — вход
   разрешён любому пользователю этого GitLab;
 - `redirectUri` (необязательно) переопределяет выводимый из запроса callback
-  — нужен только за reverse-прокси, меняющим хост.
+  — нужен только за reverse-прокси, меняющим хост. Как и настройка в
+  GitLab-приложении, это должен быть полный URL callback, оканчивающийся
+  на `/api/auth/gitlab/callback` и ровно совпадающий с зарегистрированным;
+- если GitLab отдаёт сертификат от внутреннего CA, браузер открывает его
+  спокойно, а вход падает с «Не удалось войти через GitLab»
+  (`SELF_SIGNED_CERT_IN_CHAIN` в логе сервера): Node не использует
+  хранилище сертификатов ОС. Укажите в `caCert` путь к PEM-файлу с этим CA
+  (относительные пути считаются от корня проекта; CA добавляется *поверх*
+  обычных) — или, во полностью доверенной сети, поставьте `insecureTls: true`,
+  чтобы отключить проверку сертификата только для запросов к GitLab.
 
 Забыли пароль? На сервере, из корня проекта (никакой почты, сервер можно
 не останавливать):
@@ -194,7 +208,8 @@ test/           тест парсера на реальных фикстурах
 - `GET /api/range?serverId&metric&from&to` — история метрики (raw/hourly/daily — источник выбирается сам)
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — матрица серверы × бакеты
 - `GET|PUT /api/settings` (`PUT`: с авторизацией — только админам)
-- `/api/auth/status|setup|login|logout|password`, `/api/auth/gitlab/start|callback` — авторизация (публичные: status, setup, login, logout, gitlab/*)
+- `/api/auth/status|setup|login|logout|password` — авторизация (публичные: status, setup, login, logout)
+- `GET /api/auth/gitlab/start` — редирект в GitLab; `GET /api/auth/gitlab/callback` — callback OAuth: зарегистрируйте ровно этот URL как redirect URI в GitLab-приложении
 - `GET /api/users`, `PATCH|DELETE /api/users/:id` — управление юзерами (только админы; PATCH принимает `role`, `disabled`, `password`)
 - `WS /_ws` — push-снапшоты
 

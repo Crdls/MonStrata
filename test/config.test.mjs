@@ -35,6 +35,18 @@ cfg = loadConfig()
 check('gitlab fields parsed', cfg.auth.gitlab.enabled === true && cfg.auth.gitlab.clientId === 'cid' && isGitlabReady(cfg))
 check('gitlab baseUrl trimmed of slashes', cfg.auth.gitlab.baseUrl === 'http://gitlab.lan')
 check('gitlab allowedGroups filtered to strings', JSON.stringify(cfg.auth.gitlab.allowedGroups) === '["ops"]')
+check('gitlab tls options off by default', cfg.auth.gitlab.caCert === '' && cfg.auth.gitlab.insecureTls === false)
+
+const warnLog = console.warn
+console.warn = () => { /* expected insecureTls warning */ }
+await write(JSON.stringify({ auth: { enabled: true, gitlab: { enabled: true, baseUrl: 'http://gitlab.lan', clientId: 'cid', clientSecret: 'sec', caCert: ' certs/ca.pem ', insecureTls: 'yes' } } }))
+cfg = loadConfig()
+check('gitlab caCert trimmed', cfg.auth.gitlab.caCert === 'certs/ca.pem')
+check('gitlab insecureTls only accepts true', cfg.auth.gitlab.insecureTls === false)
+await write(JSON.stringify({ auth: { enabled: true, gitlab: { enabled: true, baseUrl: 'http://gitlab.lan', clientId: 'cid', clientSecret: 'sec', insecureTls: true } } }))
+cfg = loadConfig()
+check('gitlab insecureTls true parsed', cfg.auth.gitlab.insecureTls === true && isGitlabReady(cfg))
+console.warn = warnLog
 
 await write(JSON.stringify({ auth: { enabled: true, gitlab: { enabled: true, baseUrl: 'http://gitlab.lan', clientId: 'cid' } } }))
 cfg = loadConfig()

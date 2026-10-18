@@ -116,9 +116,13 @@ GitLab server on your LAN with OAuth2 (authorization code, scope
 `read_user`) — no extra service needed:
 
 1. In GitLab create an OAuth application (your profile → Applications, or
-   Admin Area → Applications to offer it to everyone) with the redirect URI
-   `http://<monstrata-host>:3003/api/auth/gitlab/callback` and the
-   `read_user` scope;
+   Admin Area → Applications to offer it to everyone). Its redirect URI
+   must be the **full URL of MonStrata's OAuth callback endpoint**:
+   `http://<monstrata-host>:3003/api/auth/gitlab/callback`. GitLab matches
+   this string exactly — the bare host `http://<monstrata-host>:3003` is
+   *not* enough: GitLab would then deliver the code to `/`, which nobody
+   handles, and you would land back on the login page with no error.
+   Select the `read_user` scope;
 2. put the application id/secret into `config.json`:
 
 ```json
@@ -129,7 +133,9 @@ GitLab server on your LAN with OAuth2 (authorization code, scope
     "baseUrl": "http://gitlab.lan",
     "clientId": "…",
     "clientSecret": "…",
-    "allowedGroups": []
+    "allowedGroups": [],
+    "caCert": "",
+    "insecureTls": false
   }
 }
 ```
@@ -146,6 +152,15 @@ GitLab server on your LAN with OAuth2 (authorization code, scope
   user of that server sign in;
 - `redirectUri` (optional) overrides the callback URL derived from the
   request — you only need it behind a reverse proxy that rewrites the host.
+  Like the GitLab application setting it must be the full callback URL
+  ending in `/api/auth/gitlab/callback`, exactly as registered in GitLab;
+- when GitLab serves a certificate from an internal CA, your browser opens
+  it happily but the sign-in fails with "Could not sign in with GitLab"
+  (`SELF_SIGNED_CERT_IN_CHAIN` in the server log): Node does not use the
+  OS certificate store. Point `caCert` at a PEM file with the CA certificate
+  (relative paths resolve from the project root; it is trusted *on top of*
+  the regular CAs) — or, on a fully trusted LAN, set `insecureTls: true` to
+  skip certificate verification for GitLab requests only.
 
 Lost password? On the server, from the project root (no email involved,
 the server may keep running):
@@ -195,7 +210,8 @@ test/           parser test on real /metrics fixtures + auth helper tests
 - `GET /api/range?serverId&metric&from&to` — metric history (raw/hourly/daily — the source is picked automatically)
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — servers × buckets matrix
 - `GET|PUT /api/settings` (`PUT`: admin only when auth is on)
-- `/api/auth/status|setup|login|logout|password`, `/api/auth/gitlab/start|callback` — auth (public: status, setup, login, logout, gitlab/*)
+- `/api/auth/status|setup|login|logout|password` — auth (public: status, setup, login, logout)
+- `GET /api/auth/gitlab/start` — redirect to GitLab; `GET /api/auth/gitlab/callback` — the OAuth callback endpoint: register exactly this URL as the redirect URI in the GitLab application
 - `GET /api/users`, `PATCH|DELETE /api/users/:id` — user management (admins only; PATCH takes `role`, `disabled`, `password`)
 - `WS /_ws` — push snapshots
 

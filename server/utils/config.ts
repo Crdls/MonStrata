@@ -15,10 +15,16 @@ export interface GitlabAuth {
   baseUrl: string
   clientId: string
   clientSecret: string
-  /** OAuth callback override; empty = derived from the incoming request */
+  /** OAuth callback override; empty = derived from the incoming request.
+   * Must be the full callback URL, e.g. http://host:3003/api/auth/gitlab/callback */
   redirectUri: string
   /** GitLab groups whose members may sign in (subgroups inherit); empty = any user */
   allowedGroups: string[]
+  /** PEM file with the internal CA that signs the GitLab certificate;
+   * relative paths resolve from the project root; empty = system CAs only */
+  caCert: string
+  /** skip TLS certificate verification for GitLab requests (trusted LAN only) */
+  insecureTls: boolean
 }
 
 export interface AppConfig {
@@ -36,7 +42,7 @@ export const CONFIG_DEFAULTS: AppConfig = {
   db: { path: 'data/monstrata.db' },
   auth: {
     enabled: false,
-    gitlab: { enabled: false, baseUrl: '', clientId: '', clientSecret: '', redirectUri: '', allowedGroups: [] }
+    gitlab: { enabled: false, baseUrl: '', clientId: '', clientSecret: '', redirectUri: '', allowedGroups: [], caCert: '', insecureTls: false }
   }
 }
 
@@ -58,7 +64,9 @@ function parseGitlab (raw: unknown): GitlabAuth {
     redirectUri: str(g?.redirectUri),
     allowedGroups: Array.isArray(g?.allowedGroups)
       ? (g.allowedGroups as unknown[]).map(str).filter(s => s !== '')
-      : []
+      : [],
+    caCert: str(g?.caCert),
+    insecureTls: g?.insecureTls === true
   }
 }
 
@@ -102,7 +110,11 @@ export function loadConfig (): AppConfig {
         console.error('[monstrata] could not read config.json, using defaults:', err)
       }
     }
-    rt.config = { mtime, value: parseConfig(text) }
+    const value = parseConfig(text)
+    if (value.auth.gitlab.enabled && value.auth.gitlab.insecureTls) {
+      console.warn('[monstrata] GitLab TLS certificate verification is disabled (auth.gitlab.insecureTls)')
+    }
+    rt.config = { mtime, value }
   }
   return rt.config.value
 }

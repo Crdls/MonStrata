@@ -102,8 +102,11 @@ NITRO_HOST=0.0.0.0 NITRO_PORT=3003 node .output/server/index.mjs
 （authorization code，scope `read_user`）认证 — 无需额外的 IdP 服务：
 
 1. 在 GitLab 中创建 OAuth 应用（个人档案 → 「应用」，或在 Admin Area →
-   「应用」中创建以供所有人使用），redirect URI 为
-   `http://<monstrata-主机>:3003/api/auth/gitlab/callback`，scope 选
+   「应用」中创建以供所有人使用）。redirect URI 必须填写 MonStrata 的
+   OAuth callback 端点的**完整 URL**：
+   `http://<monstrata-主机>:3003/api/auth/gitlab/callback`。GitLab 逐字符
+   精确匹配 — 只写主机 `http://<monstrata-主机>:3003` *不够*：GitLab 会把
+   code 送回 `/`，没有任何处理器，结果就是无声地退回登录页。scope 选
    `read_user`；
 2. 把应用的 id/secret 写入 `config.json`：
 
@@ -115,7 +118,9 @@ NITRO_HOST=0.0.0.0 NITRO_PORT=3003 node .output/server/index.mjs
     "baseUrl": "http://gitlab.lan",
     "clientId": "…",
     "clientSecret": "…",
-    "allowedGroups": []
+    "allowedGroups": [],
+    "caCert": "",
+    "insecureTls": false
   }
 }
 ```
@@ -129,7 +134,14 @@ NITRO_HOST=0.0.0.0 NITRO_PORT=3003 node .output/server/index.mjs
 - `allowedGroups`（可选）只允许这些 GitLab 组的成员登录；子组成员同样
   有效；留空则该 GitLab 的任何用户都可登录；
 - `redirectUri`（可选）覆盖从请求推导的 callback 地址 — 仅在会改写主机名的
-  reverse proxy 之后才需要。
+  reverse proxy 之后才需要。与 GitLab 应用里的设置一样，它必须是以
+  `/api/auth/gitlab/callback` 结尾的完整 callback URL，且与 GitLab 中
+  注册的完全一致；
+- 如果 GitLab 使用内部 CA 签发的证书，浏览器能正常打开，但登录会失败并提示
+  「无法通过 GitLab 登录」（服务器日志中是 `SELF_SIGNED_CERT_IN_CHAIN`）：
+  Node 不使用操作系统的证书存储。请在 `caCert` 中指向该 CA 证书的 PEM 文件
+  （相对路径从项目根目录解析；该 CA 是在常规 CA 基础上*追加*信任）— 或者在
+  完全可信的局域网中设置 `insecureTls: true`，仅对 GitLab 请求跳过证书验证。
 
 忘记密码？在服务器上、项目根目录执行（无需邮箱，服务器无需停止）：
 
@@ -178,7 +190,8 @@ test/           基于真实 /metrics 固定数据的解析器测试 + 认证测
 - `GET /api/range?serverId&metric&from&to` — 指标历史（raw/hourly/daily — 数据源自动选择）
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — 服务器 × 时间桶矩阵
 - `GET|PUT /api/settings`（`PUT`：开启验证后仅管理员）
-- `/api/auth/status|setup|login|logout|password`、`/api/auth/gitlab/start|callback` — 身份验证（公开：status、setup、login、logout、gitlab/*）
+- `/api/auth/status|setup|login|logout|password` — 身份验证（公开：status、setup、login、logout）
+- `GET /api/auth/gitlab/start` — 重定向到 GitLab；`GET /api/auth/gitlab/callback` — OAuth callback：请把这一 URL 原样注册为 GitLab 应用的 redirect URI
 - `GET /api/users`、`PATCH|DELETE /api/users/:id` — 用户管理（仅管理员；PATCH 接受 `role`、`disabled`、`password`）
 - `WS /_ws` — 推送快照
 

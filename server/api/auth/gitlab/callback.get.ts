@@ -2,6 +2,7 @@ import {
   isGroupAllowed, pathsFromGroupsResponse, tokenFromResponse, tokenRequestBody, usernameFromUserResponse
 } from '../../../utils/gitlab'
 import { isGitlabReady, loadConfig } from '../../../utils/config'
+import { gitlabFetch } from '../../../utils/gitlab-tls'
 import { normalizeUsername, startSession } from '../../../utils/auth'
 import { runtime } from '../../../utils/runtime'
 import { countUsers, createUser, getUserByUsername, touchLastLogin } from '../../../utils/db'
@@ -27,31 +28,31 @@ export default defineEventHandler(async (event) => {
 
   const redirectUri = gl.redirectUri || `${getRequestURL(event).origin}/api/auth/gitlab/callback`
   try {
-    const tokenRes = await fetch(`${gl.baseUrl}/oauth/token`, {
+    const tokenRes = await gitlabFetch(`${gl.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: tokenRequestBody(gl, code, redirectUri),
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
-    })
+      timeoutMs: FETCH_TIMEOUT_MS
+    }, gl)
     if (!tokenRes.ok) return fail('gitlab')
-    const accessToken = tokenFromResponse(await tokenRes.text())
+    const accessToken = tokenFromResponse(tokenRes.text)
     if (!accessToken) return fail('gitlab')
 
-    const userRes = await fetch(`${gl.baseUrl}/api/v4/user`, {
+    const userRes = await gitlabFetch(`${gl.baseUrl}/api/v4/user`, {
       headers: { Authorization: `Bearer ${accessToken}` },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
-    })
+      timeoutMs: FETCH_TIMEOUT_MS
+    }, gl)
     if (!userRes.ok) return fail('gitlab')
-    const username = normalizeUsername(usernameFromUserResponse(await userRes.text()))
+    const username = normalizeUsername(usernameFromUserResponse(userRes.text))
     if (!username) return fail('gitlab')
 
     if (gl.allowedGroups.length > 0) {
-      const groupsRes = await fetch(`${gl.baseUrl}/api/v4/groups?membership=true&all=true&per_page=100`, {
+      const groupsRes = await gitlabFetch(`${gl.baseUrl}/api/v4/groups?membership=true&all=true&per_page=100`, {
         headers: { Authorization: `Bearer ${accessToken}` },
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
-      })
+        timeoutMs: FETCH_TIMEOUT_MS
+      }, gl)
       // unreachable groups API = deny, the restriction was asked for
-      const paths = groupsRes.ok ? pathsFromGroupsResponse(await groupsRes.text()) : []
+      const paths = groupsRes.ok ? pathsFromGroupsResponse(groupsRes.text) : []
       if (!isGroupAllowed(gl.allowedGroups, paths)) return fail('gitlab-forbidden')
     }
 
