@@ -47,6 +47,13 @@ npm run build
 退出码 135 被终止 — 限制 Node 堆大小即可：
 `NODE_OPTIONS=--max-old-space-size=1024 npm install --omit=dev`（`npm run build` 同理）。
 
+## 更新
+
+同样的步骤，一个脚本搞定：Linux 运行 `./update.sh`，Windows 运行
+`update.bat`。脚本依次执行 `git pull`、`npm install --omit=dev` 和
+`npm run build`，新克隆后同样适用（此时 pull 什么都不做）。之后重启
+服务器以应用新构建。
+
 ## 运行
 
 ```sh
@@ -181,6 +188,7 @@ server/
   routes/_ws.ts WebSocket 端点
 scripts/        reset-password.mjs — 密码恢复（无需邮箱）
 test/           基于真实 /metrics 固定数据的解析器测试 + 认证测试
+update.sh|.bat  一键安装/更新：pull + install --omit=dev + build
 ```
 
 ## API

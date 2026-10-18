@@ -54,6 +54,13 @@ install or build step may get killed with exit code 135 — cap the Node heap:
 `NODE_OPTIONS=--max-old-space-size=1024 npm install --omit=dev` (same for
 `npm run build`).
 
+## Updating
+
+The same steps as a one-shot script: `./update.sh` on Linux, `update.bat` on
+Windows. It runs `git pull`, `npm install --omit=dev` and `npm run build`, and
+also fits a fresh clone (the pull is a no-op there). Restart the server
+afterwards to apply the new build.
+
 ## Running
 
 ```sh
@@ -201,6 +208,7 @@ server/
   routes/_ws.ts WebSocket endpoint
 scripts/        reset-password.mjs - lost password recovery (no email)
 test/           parser test on real /metrics fixtures + auth helper tests
+update.sh|.bat  one-shot install/update: pull + install --omit=dev + build
 ```
 
 ## API

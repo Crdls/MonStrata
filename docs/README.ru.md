@@ -53,6 +53,13 @@ npm run build
 `NODE_OPTIONS=--max-old-space-size=1024 npm install --omit=dev` (и так же
 с `npm run build`).
 
+## Обновление
+
+Те же шаги одним скриптом: `./update.sh` на Linux, `update.bat` на Windows.
+Он выполняет `git pull`, `npm install --omit=dev` и `npm run build`; подойдёт
+и для свежего клона (pull там ничего не делает). После него сервер нужно
+перезапустить, чтобы применить новую сборку.
+
 ## Запуск
 
 ```sh
@@ -199,6 +206,7 @@ server/
   routes/_ws.ts WebSocket-эндпоинт
 scripts/        reset-password.mjs — восстановление пароля (без почты)
 test/           тест парсера на реальных фикстурах (/metrics) + тесты авторизации
+update.sh|.bat  установка/обновление одной командой: pull + install + build
 ```
 
 ## API

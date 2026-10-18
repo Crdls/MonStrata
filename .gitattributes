@@ -1,0 +1,4 @@
+# Shell scripts must keep LF or Linux refuses to run them.
+*.sh text eol=lf
+# Windows batch files need CRLF.
+*.bat text eol=crlf
