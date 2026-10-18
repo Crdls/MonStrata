@@ -7,6 +7,8 @@
 
 ![仪表盘](images/dashboard-zh.png)
 
+![负载热力图](images/heatmap-zh.png)
+
 ## 功能
 
 - **多服务器** — 通过基础 URL 添加 Strata 引擎

@@ -7,6 +7,8 @@ dashboard, metric history and a load heatmap with selectable period.
 
 ![Dashboard](docs/images/dashboard-en.png)
 
+![Load heatmap](docs/images/heatmap-en.png)
+
 ## Features
 
 - **Multiple servers** — add a Strata engine by base URL
