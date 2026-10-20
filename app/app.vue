@@ -2,7 +2,8 @@
 import { de, en, es, fr, ru, zh_cn } from '@nuxt/ui/locale'
 
 useHead({
-  titleTemplate: (title?: string | null) => (title ? `${title} · MonStrata` : 'MonStrata')
+  titleTemplate: (title?: string | null) => (title ? `${title} · MonStrata` : 'MonStrata'),
+  link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }]
 })
 
 // keep Nuxt UI internal strings (modal close, select, input number, ...)

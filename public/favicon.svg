@@ -1,0 +1,28 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="mouthF9">
+      <path d="M 15.5 35 C 22 36.5 42 36.5 48.5 35 C 46.5 45 39.5 50.5 32 50.5 C 24.5 50.5 17.5 45 15.5 35 Z"/>
+    </clipPath>
+  </defs>
+  <!-- horns in body colour -->
+  <path d="M 25.5 20 C 18 18.5 13.5 13.5 14 8 C 18.5 12.5 22.5 15.5 29 17.2 Z" fill="#2554a3"/>
+  <path d="M 38.5 20 C 46 18.5 50.5 13.5 50 8 C 45.5 12.5 41.5 15.5 35 17.2 Z" fill="#2554a3"/>
+  <!-- body -->
+  <path d="M 32 13 C 22 13 15.5 20 15 30 L 13.5 52 C 13.3 53.8 14.6 55 16.3 55 L 47.7 55 C 49.4 55 50.7 53.8 50.5 52 L 49 30 C 48.5 20 42 13 32 13 Z" fill="#2554a3"/>
+  <!-- brows -->
+  <path d="M 22.5 15.5 L 29.5 18" fill="none" stroke="#1a1512" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 41.5 15.5 L 34.5 18" fill="none" stroke="#1a1512" stroke-width="3" stroke-linecap="round"/>
+  <!-- eyes -->
+  <circle cx="24" cy="26.5" r="6" fill="#fff8e7"/>
+  <circle cx="40" cy="26.5" r="6" fill="#fff8e7"/>
+  <circle cx="24" cy="26" r="2.3" fill="#1a1512"/>
+  <circle cx="40" cy="26" r="2.3" fill="#1a1512"/>
+  <!-- all-white grin -->
+  <path d="M 15.5 35 C 22 36.5 42 36.5 48.5 35 C 46.5 45 39.5 50.5 32 50.5 C 24.5 50.5 17.5 45 15.5 35 Z" fill="#fff8e7"/>
+  <!-- bite zigzag chart -->
+  <g clip-path="url(#mouthF9)">
+    <path d="M 16 34.9 L 20.5 46.3 L 24 35.6 L 28 50.2 L 32 35.7 L 36 50.1 L 40 35.6 L 43.5 46.5 L 48 34.9" fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
+
+

@@ -44,7 +44,7 @@ function isActive (to: string) {
     <header class="border-b border-default bg-elevated/50 backdrop-blur sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4 lg:gap-6">
         <NuxtLink to="/" class="flex items-center gap-2 font-semibold text-highlighted shrink-0">
-          <UIcon name="i-lucide-activity" class="size-5 text-primary" />
+          <img src="/logo.svg" class="size-6" alt="" />
           <span>MonStrata</span>
         </NuxtLink>
         <nav class="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">

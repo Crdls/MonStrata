@@ -69,7 +69,7 @@ async function submit () {
   <div class="min-h-screen bg-default flex flex-col items-center justify-center p-4">
     <div class="w-full max-w-sm">
       <div class="flex items-center justify-center gap-2 font-semibold text-highlighted mb-6">
-        <UIcon name="i-lucide-activity" class="size-6 text-primary" />
+        <img src="/logo.svg" class="size-10" alt="" />
         <span class="text-lg">MonStrata</span>
       </div>
 

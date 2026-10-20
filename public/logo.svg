@@ -1,0 +1,28 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="mouth9">
+      <path d="M 15 36 C 22 37.5 42 37.5 49 36 C 47 46 40 51 32 51 C 24 51 17 46 15 36 Z"/>
+    </clipPath>
+  </defs>
+  <!-- horns in body colour, behind the stele -->
+  <path d="M 26.5 19.5 C 19.5 18 15 13.5 15.5 8 C 19.5 12 23 14.8 29.5 16.5 Z" fill="#2554a3"/>
+  <path d="M 37.5 19.5 C 44.5 18 49 13.5 48.5 8 C 44.5 12 41 14.8 34.5 16.5 Z" fill="#2554a3"/>
+  <!-- stele body -->
+  <path d="M 32 12 C 22.5 12 15.5 19 15 29 L 13.5 51.5 C 13.3 53.2 14.5 54.5 16.2 54.5 L 47.8 54.5 C 49.5 54.5 50.7 53.2 50.5 51.5 L 49 29 C 48.5 19 41.5 12 32 12 Z" fill="#2554a3"/>
+  <!-- brows -->
+  <path d="M 20.5 18 L 28.5 20.5" fill="none" stroke="#1a1512" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M 43.5 18 L 35.5 20.5" fill="none" stroke="#1a1512" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- eyes -->
+  <circle cx="24.5" cy="28" r="5.5" fill="#fff8e7"/>
+  <circle cx="39.5" cy="28" r="5.5" fill="#fff8e7"/>
+  <circle cx="24.5" cy="27.5" r="2" fill="#1a1512"/>
+  <circle cx="39.5" cy="27.5" r="2" fill="#1a1512"/>
+  <!-- all-white grin: upper teeth down, lower teeth up -->
+  <path d="M 15 36 C 22 37.5 42 37.5 49 36 C 47 46 40 51 32 51 C 24 51 17 46 15 36 Z" fill="#fff8e7"/>
+  <!-- bite line = load chart, clipped to the mouth -->
+  <g clip-path="url(#mouth9)">
+    <path d="M 15.8 36.2 L 19 45.3 L 21.6 36.5 L 24.2 49.4 L 26.8 36.5 L 29.4 50.9 L 32 36.5 L 34.6 51.1 L 37.2 36.5 L 39.8 50.2 L 42.4 36.5 L 45 45.5 L 48.2 36.2" fill="none" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
+
+
