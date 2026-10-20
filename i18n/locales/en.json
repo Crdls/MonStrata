@@ -59,6 +59,8 @@
     "actions": "Actions",
     "baseUrl": "Base URL",
     "baseUrlHelp": "Metrics are read from the /metrics endpoint of this URL",
+    "apiKey": "API key (optional)",
+    "apiKeyHelp": "Sent to Strata as a bearer token; newer versions require it for servers exposed to the network",
     "add": "Add",
     "confirmTitle": "Remove server",
     "confirmText": "Remove {name} and all its stored history? This cannot be undone.",

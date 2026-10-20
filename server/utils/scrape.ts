@@ -9,6 +9,13 @@ export function metricsUrl (url: string): string {
   return u.endsWith('/metrics') ? u : `${u}/metrics`
 }
 
+/** Headers for /metrics requests; newer Strata behind a key need a bearer token. */
+export function metricsHeaders (server: ServerRow): Record<string, string> {
+  const headers: Record<string, string> = { accept: 'text/plain' }
+  if (server.api_key) headers.authorization = `Bearer ${server.api_key}`
+  return headers
+}
+
 export function validateBaseUrl (url: string): string {
   const u = url.trim().replace(/\/+$/, '')
   let parsed: URL
@@ -118,7 +125,7 @@ export async function scrapeServer (server: ServerRow): Promise<Snapshot> {
   try {
     const res = await fetch(metricsUrl(server.url), {
       signal: AbortSignal.timeout(5000),
-      headers: { accept: 'text/plain' }
+      headers: metricsHeaders(server)
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const text = await res.text()

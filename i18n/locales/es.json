@@ -59,6 +59,8 @@
     "actions": "Acciones",
     "baseUrl": "URL base",
     "baseUrlHelp": "Las métricas se leen del endpoint /metrics de esta URL",
+    "apiKey": "Clave de API (opcional)",
+    "apiKeyHelp": "Se envía a Strata como token bearer; las versiones nuevas la exigen para servidores expuestos",
     "add": "Añadir",
     "confirmTitle": "Eliminar servidor",
     "confirmText": "¿Eliminar {name} y todo su historial almacenado? No se puede deshacer.",

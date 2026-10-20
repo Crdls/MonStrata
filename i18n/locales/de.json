@@ -59,6 +59,8 @@
     "actions": "Aktionen",
     "baseUrl": "Basis-URL",
     "baseUrlHelp": "Metriken werden vom /metrics-Endpunkt dieser URL gelesen",
+    "apiKey": "API-Schlüssel (optional)",
+    "apiKeyHelp": "Wird als Bearer-Token an Strata gesendet; neuere Strata-Versionen verlangen ihn bei exponierten Servern",
     "add": "Hinzufügen",
     "confirmTitle": "Server entfernen",
     "confirmText": "{name} und den gesamten gespeicherten Verlauf entfernen? Das kann nicht rückgängig gemacht werden.",

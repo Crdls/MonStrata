@@ -4,6 +4,7 @@ interface ServerRow {
   name: string
   url: string
   enabled: boolean
+  apiKey: string | null
   createdAt: number
   createdBy: number | null
   createdByName: string | null
@@ -30,7 +31,7 @@ function canManage (server: ServerRow): boolean {
 
 const formOpen = ref(false)
 const editing = ref<ServerRow | null>(null)
-const form = reactive({ name: '', url: '' })
+const form = reactive({ name: '', url: '', apiKey: '' })
 const saving = ref(false)
 const deleteTarget = ref<ServerRow | null>(null)
 const pinging = ref<number | null>(null)
@@ -39,6 +40,7 @@ function openAdd () {
   editing.value = null
   form.name = ''
   form.url = ''
+  form.apiKey = ''
   formOpen.value = true
 }
 
@@ -56,6 +58,7 @@ function openEdit (server: ServerRow) {
   editing.value = server
   form.name = server.name
   form.url = server.url
+  form.apiKey = server.apiKey ?? ''
   formOpen.value = true
 }
 
@@ -230,6 +233,9 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
           </UFormField>
           <UFormField :label="t('servers.baseUrl')" required :help="t('servers.baseUrlHelp')">
             <UInput v-model="form.url" placeholder="http://192.168.10.76:8000" class="w-full" />
+          </UFormField>
+          <UFormField :label="t('servers.apiKey')" :help="t('servers.apiKeyHelp')">
+            <UInput v-model="form.apiKey" type="password" placeholder="sk-..." class="w-full" />
           </UFormField>
           <div class="flex justify-end gap-2 pt-2">
             <UButton color="neutral" variant="ghost" @click="formOpen = false">

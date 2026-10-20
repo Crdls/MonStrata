@@ -59,6 +59,8 @@
     "actions": "Actions",
     "baseUrl": "URL de base",
     "baseUrlHelp": "Les métriques sont lues depuis le endpoint /metrics de cette URL",
+    "apiKey": "Clé d'API (facultative)",
+    "apiKeyHelp": "Envoyée à Strata comme jeton bearer ; les nouvelles versions de Strata l'exigent pour les serveurs exposés",
     "add": "Ajouter",
     "confirmTitle": "Supprimer le serveur",
     "confirmText": "Supprimer {name} et tout son historique enregistré ? Action irréversible.",

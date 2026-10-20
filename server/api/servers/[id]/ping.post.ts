@@ -1,5 +1,5 @@
 import { useDb, type ServerRow } from '../../../utils/db'
-import { metricsUrl } from '../../../utils/scrape'
+import { metricsHeaders, metricsUrl } from '../../../utils/scrape'
 import { parsePrometheus } from '../../../utils/parse'
 
 export default defineEventHandler(async (event) => {
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   try {
     const res = await fetch(metricsUrl(server.url), {
       signal: AbortSignal.timeout(5000),
-      headers: { accept: 'text/plain' }
+      headers: metricsHeaders(server)
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const { samples } = parsePrometheus(await res.text())

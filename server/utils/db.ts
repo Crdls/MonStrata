@@ -13,6 +13,8 @@ export interface ServerRow {
   created_at: number
   /** user who added the server; null for pre-roles rows and auth-disabled setups */
   created_by: number | null
+  /** bearer token for /metrics; null when the Strata endpoint is open */
+  api_key: string | null
 }
 
 export interface UserRow {
@@ -63,7 +65,8 @@ CREATE TABLE IF NOT EXISTS servers (
   url        TEXT NOT NULL UNIQUE,
   enabled    INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL,
-  created_by INTEGER
+  created_by INTEGER,
+  api_key    TEXT
 );
 CREATE TABLE IF NOT EXISTS server_status (
   server_id INTEGER NOT NULL,
@@ -140,6 +143,7 @@ export function useDb (): Database.Database {
     db.exec(SCHEMA)
     // upgrades for databases created before the column existed
     ensureColumn(db, 'servers', 'created_by', 'INTEGER')
+    ensureColumn(db, 'servers', 'api_key', 'TEXT')
     ensureColumn(db, 'users', 'gitlab', 'INTEGER NOT NULL DEFAULT 0')
     ensureColumn(db, 'users', 'disabled', 'INTEGER NOT NULL DEFAULT 0')
     // an empty pass_hash could only ever come from the GitLab OAuth sign-up

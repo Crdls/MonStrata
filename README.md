@@ -15,6 +15,8 @@ with selectable period.
 - **Multiple servers** — add a Strata engine by base URL
   (e.g. `http://192.168.10.76:8000`), metrics are read from `/metrics`
   (Prometheus text format, `Accept: text/plain` header required).
+  An optional API key is sent as a `Bearer` token — newer Strata versions
+  require it when the server is exposed to the network.
 - **Live dashboard** — engine state (idle / reading / generating),
   tok/s, queues, KV cache, per GPU: util / VRAM / temperature / power,
   plus host CPU and RAM. Updates over WebSocket with a polling fallback.
@@ -28,6 +30,9 @@ with selectable period.
 - **Theme** — light / dark / system: quick toggle in the header or a
   selector in Settings; accent and neutral palettes selectable in
   Settings; stored per browser (localStorage).
+- **Mascot** — a horned grinning monster whose smile is a green load-chart
+  zigzag: `public/logo.svg` in the header and on the login page,
+  `public/favicon.svg` as the tab icon.
 - **i18n** — UI in English, Russian, German, Spanish, French and Chinese;
   language is detected from the browser and switched in the header
   (stored in the `monstrata_locale` cookie). Strings live in

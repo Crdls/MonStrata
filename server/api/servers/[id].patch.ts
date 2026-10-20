@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   if (!server) throw createError({ statusCode: 404, statusMessage: 'server not found' })
   assertCanManageServer(event, server)
 
-  const body = await readBody<{ name?: string, url?: string, enabled?: boolean }>(event)
+  const body = await readBody<{ name?: string, url?: string, enabled?: boolean, apiKey?: string }>(event)
   const name = body?.name?.trim() || server.name
   let url = server.url
   if (body?.url !== undefined && body.url !== server.url) {
@@ -21,8 +21,10 @@ export default defineEventHandler(async (event) => {
     }
   }
   const enabled = body?.enabled === undefined ? server.enabled : (body.enabled ? 1 : 0)
+  // undefined keeps the stored key, an empty string clears it
+  const apiKey = body?.apiKey === undefined ? server.api_key : (body.apiKey.trim() || null)
 
-  db.prepare('UPDATE servers SET name = ?, url = ?, enabled = ? WHERE id = ?').run(name, url, enabled, id)
+  db.prepare('UPDATE servers SET name = ?, url = ?, enabled = ?, api_key = ? WHERE id = ?').run(name, url, enabled, apiKey, id)
   if (url !== server.url) forgetServerState(id)
 
   const updated = db.prepare('SELECT * FROM servers WHERE id = ?').get(id) as ServerRow

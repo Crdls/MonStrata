@@ -17,6 +17,7 @@ export default defineEventHandler(() => {
       name: s.name,
       url: s.url,
       enabled: s.enabled === 1,
+      apiKey: s.api_key,
       createdAt: s.created_at,
       createdBy: s.created_by,
       createdByName: s.created_by_name,

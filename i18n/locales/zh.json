@@ -59,6 +59,8 @@
     "actions": "操作",
     "baseUrl": "基础 URL",
     "baseUrlHelp": "指标从该地址的 /metrics 端点读取",
+    "apiKey": "API 密钥（可选）",
+    "apiKeyHelp": "作为 Bearer 令牌发送给 Strata；新版 Strata 对对外暴露的服务器要求提供",
     "add": "添加",
     "confirmTitle": "删除服务器",
     "confirmText": "删除 {name} 及其全部历史数据？此操作不可撤销。",
