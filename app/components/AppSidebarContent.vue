@@ -5,12 +5,28 @@ const emit = defineEmits<{ dismiss: [] }>()
 const route = useRoute()
 const { status, isAdmin, signOut } = useAuth()
 const { connected } = useLive()
-const { status: updateStatus } = useUpdate()
+const { status: updateStatus, checkNow } = useUpdate()
 const authUser = computed(() => (status.value?.authEnabled ? status.value.user : null))
 const { t } = useI18n()
+const toast = useToast()
 
 const versionLabel = computed(() => (updateStatus.value ? shortVersion(updateStatus.value.currentSha) : ''))
 const versionDate = computed(() => (updateStatus.value?.commitTs ? new Date(updateStatus.value.commitTs).toLocaleDateString() : ''))
+
+// the version line doubles as the quick check button
+const checkingUpdate = ref(false)
+
+async function checkUpdate () {
+  if (checkingUpdate.value) return
+  checkingUpdate.value = true
+  try {
+    await checkNow()
+  } catch {
+    toast.add({ title: t('update.toastCheckFailed'), color: 'error' })
+  } finally {
+    checkingUpdate.value = false
+  }
+}
 
 // the user table is only listed for admins while auth is on
 const nav = computed(() => [
@@ -64,12 +80,28 @@ function isActive (to: string) {
     <!-- footer group: build info sits above the divider as plain text,
          the utility buttons (live state · theme · source · logout) below it -->
     <div class="shrink-0">
-      <div v-if="versionLabel" class="px-2 pb-1.5 flex items-center gap-1 text-[11px] font-mono text-dimmed">
-        <span>{{ versionLabel }}{{ versionDate ? ` · ${versionDate}` : '' }}</span>
-        <UTooltip v-if="updateStatus?.updateAvailable" :text="t('update.updateAvailable')">
-          <UIcon name="i-lucide-arrow-up-circle" class="size-3 text-warning" />
-        </UTooltip>
-      </div>
+      <!-- click runs the same check as the Settings button, right in place -->
+      <UTooltip :text="updateStatus?.updateAvailable ? t('update.updateAvailable') : t('update.checkHint')">
+        <button
+          v-if="versionLabel"
+          type="button"
+          class="px-2 pb-1.5 flex items-center gap-1 text-[11px] font-mono text-dimmed transition-colors hover:text-default"
+          :aria-label="t('update.check')"
+          @click="checkUpdate"
+        >
+          <span>{{ versionLabel }}{{ versionDate ? ` · ${versionDate}` : '' }}</span>
+          <UIcon
+            v-if="checkingUpdate || updateStatus?.checking"
+            name="i-lucide-loader-circle"
+            class="size-3 animate-spin"
+          />
+          <UIcon
+            v-else-if="updateStatus?.updateAvailable"
+            name="i-lucide-arrow-up-circle"
+            class="size-3 text-warning"
+          />
+        </button>
+      </UTooltip>
 
       <div class="flex items-center justify-between gap-1 -mx-3 px-3 pt-2 border-t border-default">
         <UTooltip :text="connected ? t('common.liveHint') : t('common.pollHint')">

@@ -336,6 +336,7 @@
     "checkedAt": "Geprüft um {time}",
     "compare": "Änderungen ansehen",
     "check": "Jetzt prüfen",
+    "checkHint": "Klicken, um nach Updates zu suchen",
     "apply": "Update & Neustart",
     "applyTitle": "Update anwenden?",
     "applyText": "MonStrata holt den neuen Code, baut neu und startet neu. Die Gateway-Warteschlange und laufende Anfragen gehen verloren.",

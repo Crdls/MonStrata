@@ -336,6 +336,7 @@
     "checkedAt": "Comprobado a las {time}",
     "compare": "Ver cambios",
     "check": "Comprobar",
+    "checkHint": "Haz clic para comprobar si hay actualizaciones",
     "apply": "Actualizar y reiniciar",
     "applyTitle": "¿Aplicar la actualización?",
     "applyText": "MonStrata descargará el código nuevo, recompilará y se reiniciará. La cola de la pasarela y las peticiones en vuelo se pierden.",

@@ -73,7 +73,8 @@ install or build step may get killed with exit code 135 — cap the Node heap:
 ## Updating
 
 The running build is a git checkout, so MonStrata knows its own commit and
-shows it in the sidebar. Every 6 hours (or on "Check now") it asks `origin`
+shows it in the sidebar; clicking that line checks for updates on the spot.
+Every 6 hours (or on "Check now") it asks `origin`
 whether the branch moved; Settings → Updates then offers "Update & restart"
 (admins while auth is on). That runs `scripts/autoupdate.mjs` in the
 background: wait for the server to exit, `git pull --ff-only`,

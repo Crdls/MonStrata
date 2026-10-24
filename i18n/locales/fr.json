@@ -336,6 +336,7 @@
     "checkedAt": "Vérifié à {time}",
     "compare": "Voir les changements",
     "check": "Vérifier",
+    "checkHint": "Cliquer pour vérifier les mises à jour",
     "apply": "Mettre à jour et redémarrer",
     "applyTitle": "Appliquer la mise à jour ?",
     "applyText": "MonStrata téléchargera le nouveau code, se recompilera et redémarrera. La file d’attente de la passerelle et les requêtes en cours sont perdues.",

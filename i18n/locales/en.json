@@ -336,6 +336,7 @@
     "checkedAt": "Checked at {time}",
     "compare": "View changes",
     "check": "Check now",
+    "checkHint": "Click to check for updates",
     "apply": "Update & restart",
     "applyTitle": "Apply the update?",
     "applyText": "MonStrata will pull the new code, rebuild and restart. The gateway queue and in-flight requests are lost.",

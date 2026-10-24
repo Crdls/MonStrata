@@ -61,8 +61,9 @@ npm run build
 
 ## 更新
 
-运行中的构建就是一个 git 克隆，因此 MonStrata 知道自己的提交并显示在侧栏中。
-每 6 小时（或点击"立即检查"时）它会询问 `origin` 分支是否有新提交；
+运行中的构建就是一个 git 克隆，因此 MonStrata 知道自己的提交并显示在侧栏中；
+点击这一行就会就地检查更新。每 6 小时（或点击"立即检查"时）它会询问
+`origin` 分支是否有新提交；
 届时设置中会出现"更新并重启"按钮（开启验证后仅管理员）。
 该按钮在后台运行 `scripts/autoupdate.mjs`：等待服务器退出，依次执行
 `git pull --ff-only`、`npm install --omit=dev`、`npm run build`，

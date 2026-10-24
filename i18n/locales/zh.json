@@ -336,6 +336,7 @@
     "checkedAt": "检查于 {time}",
     "compare": "查看变更",
     "check": "立即检查",
+    "checkHint": "点击以检查更新",
     "apply": "更新并重启",
     "applyTitle": "应用此更新？",
     "applyText": "MonStrata 将拉取新代码、重新构建并重启。网关队列和进行中的请求将会丢失。",
