@@ -64,6 +64,15 @@ await write(JSON.stringify({ db: { path: 42 }, auth: { enabled: 'yes' } }))
 cfg = loadConfig()
 check('wrong types fall back to defaults', cfg.db.path === CONFIG_DEFAULTS.db.path && cfg.auth.enabled === false)
 
+await write(JSON.stringify({ gateway: { enabled: true, queueTimeoutS: 5, queueMax: 10, defaultCapacity: 4 } }))
+cfg = loadConfig()
+check('gateway parsed from file', cfg.gateway.enabled === true && cfg.gateway.queueTimeoutS === 5 && cfg.gateway.queueMax === 10 && cfg.gateway.defaultCapacity === 4)
+check('gateway unset fields use defaults', cfg.gateway.sessionIdleMin === CONFIG_DEFAULTS.gateway.sessionIdleMin && cfg.gateway.ejectionS === CONFIG_DEFAULTS.gateway.ejectionS)
+await write(JSON.stringify({ gateway: { queueTimeoutS: 'nope', queueMax: -3, queueMaxPerClient: 0 } }))
+cfg = loadConfig()
+check('gateway stays off unless explicitly enabled', cfg.gateway.enabled === false)
+check('gateway bad numbers fall back to defaults', cfg.gateway.queueTimeoutS === CONFIG_DEFAULTS.gateway.queueTimeoutS && cfg.gateway.queueMax === CONFIG_DEFAULTS.gateway.queueMax && cfg.gateway.queueMaxPerClient === CONFIG_DEFAULTS.gateway.queueMaxPerClient)
+
 const errLog = console.error
 console.error = () => { /* expected parse error */ }
 await write('not json {{{')

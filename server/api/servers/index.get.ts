@@ -18,6 +18,8 @@ export default defineEventHandler(() => {
       url: s.url,
       enabled: s.enabled === 1,
       apiKey: s.api_key,
+      gatewayMode: s.gateway_mode,
+      gatewayCapacity: s.gateway_capacity,
       createdAt: s.created_at,
       createdBy: s.created_by,
       createdByName: s.created_by_name,

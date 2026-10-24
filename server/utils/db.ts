@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { loadConfig } from './config.ts'
+import type { ClientPriority, GatewayMode } from './gateway/types.ts'
 
 export type UserRole = 'admin' | 'user'
 
@@ -15,6 +16,10 @@ export interface ServerRow {
   created_by: number | null
   /** bearer token for /metrics; null when the Strata endpoint is open */
   api_key: string | null
+  /** gateway routing state: route to it, finish existing only, stats only */
+  gateway_mode: GatewayMode
+  /** gateway concurrency cap; null = auto (engine live_slots, else config default) */
+  gateway_capacity: number | null
 }
 
 export interface UserRow {
@@ -38,6 +43,21 @@ export interface SessionUserRow {
   role: UserRole
   pass_hash: string
   disabled: number
+}
+
+export interface GatewayClientRow {
+  id: number
+  name: string
+  /** sha256 hex of the bearer token; the raw value is never stored */
+  token_hash: string
+  /** non-secret label for the admin table */
+  token_hint: string
+  priority: ClientPriority
+  /** expose X-MonStrata-* debug headers on this client's responses */
+  debug: number
+  enabled: number
+  created_at: number
+  created_by: number | null
 }
 
 export interface Settings {
@@ -121,6 +141,40 @@ CREATE TABLE IF NOT EXISTS rollup_daily (
   n         INTEGER NOT NULL,
   PRIMARY KEY (server_id, day, metric, labels)
 );
+CREATE TABLE IF NOT EXISTS gateway_clients (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  token_hint TEXT NOT NULL,
+  priority   TEXT NOT NULL DEFAULT 'normal',
+  debug      INTEGER NOT NULL DEFAULT 0,
+  enabled    INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  created_by INTEGER
+);
+CREATE TABLE IF NOT EXISTS gateway_client_ips (
+  client_id  INTEGER NOT NULL,
+  ip         TEXT NOT NULL,
+  first_seen INTEGER NOT NULL,
+  last_seen  INTEGER NOT NULL,
+  hits       INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (client_id, ip)
+);
+CREATE TABLE IF NOT EXISTS gateway_sessions (
+  key_hash  TEXT PRIMARY KEY,
+  server_id INTEGER NOT NULL,
+  last_used INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS gateway_usage (
+  client_id     INTEGER NOT NULL,
+  day           INTEGER NOT NULL,
+  requests      INTEGER NOT NULL DEFAULT 0,
+  ok            INTEGER NOT NULL DEFAULT 0,
+  errors        INTEGER NOT NULL DEFAULT 0,
+  prompt_tokens INTEGER NOT NULL DEFAULT 0,
+  gen_tokens    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (client_id, day)
+);
 `
 
 let db: Database.Database | null = null
@@ -146,6 +200,8 @@ export function useDb (): Database.Database {
     ensureColumn(db, 'servers', 'api_key', 'TEXT')
     ensureColumn(db, 'users', 'gitlab', 'INTEGER NOT NULL DEFAULT 0')
     ensureColumn(db, 'users', 'disabled', 'INTEGER NOT NULL DEFAULT 0')
+    ensureColumn(db, 'servers', 'gateway_mode', "TEXT NOT NULL DEFAULT 'on'")
+    ensureColumn(db, 'servers', 'gateway_capacity', 'INTEGER')
     // an empty pass_hash could only ever come from the GitLab OAuth sign-up
     db.prepare("UPDATE users SET gitlab = 1 WHERE pass_hash = '' AND gitlab = 0").run()
   }
@@ -268,4 +324,144 @@ export function deleteUserSessions (userId: number, exceptTokenHash: string | nu
 
 export function purgeExpiredSessions (now: number): void {
   useDb().prepare('DELETE FROM sessions WHERE expires_at <= ?').run(now)
+}
+
+// ---------- gateway: clients ----------
+
+export interface GatewayClientRowWithStats extends GatewayClientRow {
+  requests_total: number
+  errors_total: number
+  tokens_total: number
+  requests_today: number
+}
+
+const CLIENT_STATS = `SELECT c.*,
+  COALESCE(SUM(u.requests), 0) AS requests_total,
+  COALESCE(SUM(u.errors), 0) AS errors_total,
+  COALESCE(SUM(u.prompt_tokens + u.gen_tokens), 0) AS tokens_total,
+  COALESCE(SUM(CASE WHEN u.day = ? THEN u.requests ELSE 0 END), 0) AS requests_today
+  FROM gateway_clients c LEFT JOIN gateway_usage u ON u.client_id = c.id
+  GROUP BY c.id ORDER BY c.name COLLATE NOCASE`
+
+/** All clients with usage totals; `today` is a UTC day boundary in ms. */
+export function listGatewayClients (today: number): GatewayClientRowWithStats[] {
+  return useDb().prepare(CLIENT_STATS).all(today) as GatewayClientRowWithStats[]
+}
+
+export function countGatewayClients (): number {
+  return (useDb().prepare('SELECT COUNT(*) AS n FROM gateway_clients').get() as { n: number }).n
+}
+
+export function getGatewayClientById (id: number): GatewayClientRow | null {
+  return useDb().prepare('SELECT * FROM gateway_clients WHERE id = ?').get(id) as GatewayClientRow | null
+}
+
+export function getGatewayClientByTokenHash (tokenHash: string): GatewayClientRow | null {
+  return useDb().prepare('SELECT * FROM gateway_clients WHERE token_hash = ?').get(tokenHash) as GatewayClientRow | null
+}
+
+export function createGatewayClient (input: {
+  name: string
+  tokenHash: string
+  tokenHint: string
+  priority: ClientPriority
+  debug: boolean
+  createdBy: number | null
+}): GatewayClientRow {
+  const info = useDb()
+    .prepare('INSERT INTO gateway_clients (name, token_hash, token_hint, priority, debug, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(input.name, input.tokenHash, input.tokenHint, input.priority, input.debug ? 1 : 0, Date.now(), input.createdBy)
+  return getGatewayClientById(Number(info.lastInsertRowid))!
+}
+
+export function updateGatewayClient (id: number, patch: { name?: string, priority?: ClientPriority, debug?: boolean, enabled?: boolean }): void {
+  const sets: string[] = []
+  const args: Array<string | number> = []
+  if (patch.name !== undefined) { sets.push('name = ?'); args.push(patch.name) }
+  if (patch.priority !== undefined) { sets.push('priority = ?'); args.push(patch.priority) }
+  if (patch.debug !== undefined) { sets.push('debug = ?'); args.push(patch.debug ? 1 : 0) }
+  if (patch.enabled !== undefined) { sets.push('enabled = ?'); args.push(patch.enabled ? 1 : 0) }
+  if (sets.length === 0) return
+  args.push(id)
+  useDb().prepare(`UPDATE gateway_clients SET ${sets.join(', ')} WHERE id = ?`).run(...args)
+}
+
+export function setGatewayClientToken (id: number, tokenHash: string, tokenHint: string): void {
+  useDb().prepare('UPDATE gateway_clients SET token_hash = ?, token_hint = ? WHERE id = ?').run(tokenHash, tokenHint, id)
+}
+
+/** Delete a client with its IP history and usage counters. */
+export function deleteGatewayClient (id: number): void {
+  const db = useDb()
+  db.transaction(() => {
+    db.prepare('DELETE FROM gateway_client_ips WHERE client_id = ?').run(id)
+    db.prepare('DELETE FROM gateway_usage WHERE client_id = ?').run(id)
+    db.prepare('DELETE FROM gateway_clients WHERE id = ?').run(id)
+  })()
+}
+
+export function listClientIps (clientId: number, limit: number): Array<{ ip: string, first_seen: number, last_seen: number, hits: number }> {
+  return useDb()
+    .prepare('SELECT ip, first_seen, last_seen, hits FROM gateway_client_ips WHERE client_id = ? ORDER BY last_seen DESC LIMIT ?')
+    .all(clientId, limit) as Array<{ ip: string, first_seen: number, last_seen: number, hits: number }>
+}
+
+// ---------- gateway: chat affinity ----------
+
+export function getGatewaySessionServer (keyHash: string): number | null {
+  const row = useDb().prepare('SELECT server_id FROM gateway_sessions WHERE key_hash = ?').get(keyHash) as { server_id: number } | null
+  return row ? row.server_id : null
+}
+
+export function upsertGatewaySession (keyHash: string, serverId: number, ts: number): void {
+  useDb()
+    .prepare(`INSERT INTO gateway_sessions (key_hash, server_id, last_used) VALUES (?, ?, ?)
+              ON CONFLICT(key_hash) DO UPDATE SET server_id = excluded.server_id, last_used = excluded.last_used`)
+    .run(keyHash, serverId, ts)
+}
+
+export function purgeGatewaySessions (olderThanTs: number): void {
+  useDb().prepare('DELETE FROM gateway_sessions WHERE last_used < ?').run(olderThanTs)
+}
+
+// ---------- gateway: stats flushing (batches from the in-memory aggregators) ----------
+
+export interface IpFlushRow { clientId: number, ip: string, first: number, last: number, hits: number }
+
+export function flushGatewayIpHits (rows: IpFlushRow[]): void {
+  if (rows.length === 0) return
+  const stmt = useDb().prepare(`INSERT INTO gateway_client_ips (client_id, ip, first_seen, last_seen, hits)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(client_id, ip) DO UPDATE SET
+      first_seen = MIN(first_seen, excluded.first_seen),
+      last_seen = MAX(last_seen, excluded.last_seen),
+      hits = gateway_client_ips.hits + excluded.hits`)
+  useDb().transaction(() => {
+    for (const r of rows) stmt.run(r.clientId, r.ip, r.first, r.last, r.hits)
+  })()
+}
+
+export interface UsageFlushRow {
+  clientId: number
+  day: number
+  requests: number
+  ok: number
+  errors: number
+  promptTokens: number
+  genTokens: number
+}
+
+export function flushGatewayUsage (rows: UsageFlushRow[]): void {
+  if (rows.length === 0) return
+  const stmt = useDb().prepare(`INSERT INTO gateway_usage (client_id, day, requests, ok, errors, prompt_tokens, gen_tokens)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(client_id, day) DO UPDATE SET
+      requests = requests + excluded.requests,
+      ok = ok + excluded.ok,
+      errors = errors + excluded.errors,
+      prompt_tokens = prompt_tokens + excluded.prompt_tokens,
+      gen_tokens = gen_tokens + excluded.gen_tokens`)
+  useDb().transaction(() => {
+    for (const r of rows) stmt.run(r.clientId, r.day, r.requests, r.ok, r.errors, r.promptTokens, r.genTokens)
+  })()
 }

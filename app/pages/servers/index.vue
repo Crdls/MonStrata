@@ -5,6 +5,8 @@ interface ServerRow {
   url: string
   enabled: boolean
   apiKey: string | null
+  gatewayMode: 'on' | 'drain' | 'off'
+  gatewayCapacity: number | null
   createdAt: number
   createdBy: number | null
   createdByName: string | null
@@ -31,16 +33,24 @@ function canManage (server: ServerRow): boolean {
 
 const formOpen = ref(false)
 const editing = ref<ServerRow | null>(null)
-const form = reactive({ name: '', url: '', apiKey: '' })
+const form = reactive({ name: '', url: '', apiKey: '', gatewayMode: 'on', gatewayCapacity: '' })
 const saving = ref(false)
 const deleteTarget = ref<ServerRow | null>(null)
 const pinging = ref<number | null>(null)
+
+const gatewayModeItems = computed(() => [
+  { value: 'on', label: t('gateway.modeOn') },
+  { value: 'drain', label: t('gateway.modeDrain') },
+  { value: 'off', label: t('gateway.modeOff') }
+])
 
 function openAdd () {
   editing.value = null
   form.name = ''
   form.url = ''
   form.apiKey = ''
+  form.gatewayMode = 'on'
+  form.gatewayCapacity = ''
   formOpen.value = true
 }
 
@@ -59,6 +69,8 @@ function openEdit (server: ServerRow) {
   form.name = server.name
   form.url = server.url
   form.apiKey = server.apiKey ?? ''
+  form.gatewayMode = server.gatewayMode
+  form.gatewayCapacity = server.gatewayCapacity == null ? '' : String(server.gatewayCapacity)
   formOpen.value = true
 }
 
@@ -66,9 +78,13 @@ async function save () {
   saving.value = true
   try {
     if (editing.value) {
-      await $fetch(`/api/servers/${editing.value.id}`, { method: 'PATCH', body: { ...form } })
+      const capacity = form.gatewayCapacity.trim() === '' ? null : Number(form.gatewayCapacity)
+      await $fetch(`/api/servers/${editing.value.id}`, {
+        method: 'PATCH',
+        body: { name: form.name, url: form.url, apiKey: form.apiKey, gatewayMode: form.gatewayMode, gatewayCapacity: capacity }
+      })
     } else {
-      await $fetch('/api/servers', { method: 'POST', body: { ...form } })
+      await $fetch('/api/servers', { method: 'POST', body: { name: form.name, url: form.url, apiKey: form.apiKey } })
     }
     formOpen.value = false
     toast.add({ title: t('servers.toastSaved'), color: 'success' })
@@ -145,6 +161,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
             <th class="py-2 pr-3 font-medium">{{ t('servers.name') }}</th>
             <th class="py-2 pr-3 font-medium">URL</th>
             <th class="py-2 pr-3 font-medium text-center">{{ t('servers.status') }}</th>
+            <th class="py-2 pr-3 font-medium text-center">{{ t('gateway.modeLabel') }}</th>
             <th class="py-2 pr-3 font-medium text-center">{{ t('servers.enabled') }}</th>
             <th class="py-2 font-medium text-right">{{ t('servers.actions') }}</th>
           </tr>
@@ -189,6 +206,15 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
               </UTooltip>
             </td>
             <td class="py-2.5 pr-3 text-center">
+              <UBadge
+                :color="server.gatewayMode === 'on' ? 'success' : server.gatewayMode === 'drain' ? 'warning' : 'neutral'"
+                variant="subtle"
+                size="sm"
+              >
+                {{ server.gatewayMode === 'on' ? t('gateway.modeOn') : server.gatewayMode === 'drain' ? t('gateway.modeDrain') : t('gateway.modeOff') }}
+              </UBadge>
+            </td>
+            <td class="py-2.5 pr-3 text-center">
               <USwitch
                 v-if="canManage(server)"
                 :model-value="server.enabled"
@@ -216,7 +242,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
             </td>
           </tr>
           <tr v-if="!servers?.length">
-            <td colspan="5" class="py-10 text-center text-muted">
+            <td colspan="6" class="py-10 text-center text-muted">
               {{ t('servers.empty') }}
             </td>
           </tr>
@@ -237,6 +263,14 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
           <UFormField :label="t('servers.apiKey')" :help="t('servers.apiKeyHelp')">
             <UInput v-model="form.apiKey" type="password" placeholder="sk-..." class="w-full" />
           </UFormField>
+          <template v-if="editing">
+            <UFormField :label="t('gateway.modeLabel')" :help="t('gateway.modeHelp')">
+              <USelect v-model="form.gatewayMode" :items="gatewayModeItems" class="w-40" />
+            </UFormField>
+            <UFormField :label="t('gateway.capacity')" :help="t('gateway.capacityHelp')">
+              <UInput v-model="form.gatewayCapacity" type="number" min="1" max="4096" placeholder="auto" class="w-32" />
+            </UFormField>
+          </template>
           <div class="flex justify-end gap-2 pt-2">
             <UButton color="neutral" variant="ghost" @click="formOpen = false">
               {{ t('common.cancel') }}

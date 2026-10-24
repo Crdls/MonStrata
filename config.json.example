@@ -12,5 +12,8 @@
       "redirectUri": "",
       "allowedGroups": []
     }
+  },
+  "gateway": {
+    "enabled": false
   }
 }
