@@ -4,6 +4,8 @@ export interface AuthUser {
   role: 'admin' | 'user'
   /** false for GitLab-created users who have not set a local password yet */
   hasPassword: boolean
+  /** UI language saved on the account; null = browser detection */
+  lang: string | null
 }
 
 export interface AuthStatus {

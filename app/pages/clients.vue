@@ -249,20 +249,35 @@ function priorityColor (p: string): 'error' | 'primary' | 'neutral' {
       <div class="mt-3 border-t border-default pt-3">
         <div class="text-xs uppercase tracking-wide text-muted mb-2">{{ t('gateway.serversTitle') }}</div>
         <div v-if="!gw.servers.length" class="text-sm text-muted">{{ t('gateway.noServers') }}</div>
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          <div v-for="s in gw.servers" :key="s.id" class="flex items-center gap-2 text-sm">
-            <UIcon
-              :name="s.up ? 'i-lucide-circle-check' : 'i-lucide-circle-x'"
-              class="size-4 shrink-0"
-              :class="s.up ? 'text-success' : 'text-error'"
-            />
-            <span class="truncate font-medium">{{ s.name }}</span>
-            <UBadge v-if="s.mode === 'drain'" color="warning" variant="subtle" size="sm">{{ t('gateway.draining') }}</UBadge>
-            <UBadge v-if="s.mode === 'off'" color="neutral" variant="subtle" size="sm">{{ t('gateway.off') }}</UBadge>
-            <UBadge v-if="s.ejected" color="error" variant="subtle" size="sm">{{ t('gateway.ejected') }}</UBadge>
-            <span class="ml-auto text-muted whitespace-nowrap">
-              {{ t('gateway.inflight', { n: s.inflight, cap: s.capacity }) }}
-            </span>
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+          <div v-for="s in gw.servers" :key="s.id" class="rounded-lg border border-default bg-elevated/30 p-3 space-y-2.5">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <UIcon
+                :name="s.up ? 'i-lucide-circle-check' : 'i-lucide-circle-x'"
+                class="size-4 shrink-0"
+                :class="s.up ? 'text-success' : 'text-error'"
+              />
+              <span class="truncate font-semibold text-sm">{{ s.name }}</span>
+              <div class="ml-auto flex items-center gap-1 shrink-0">
+                <UBadge v-if="s.mode === 'drain'" color="warning" variant="subtle" size="sm">{{ t('gateway.draining') }}</UBadge>
+                <UBadge v-if="s.mode === 'off'" color="neutral" variant="subtle" size="sm">{{ t('gateway.off') }}</UBadge>
+                <UBadge v-if="s.ejected" color="error" variant="subtle" size="sm">{{ t('gateway.ejected') }}</UBadge>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div class="text-lg font-semibold tabular-nums">{{ t('gateway.inflight', { n: s.inflight, cap: s.capacity }) }}</div>
+                <div class="text-[10px] uppercase tracking-wide text-muted">{{ t('gateway.inflightTitle') }}</div>
+              </div>
+              <div>
+                <div class="text-lg font-semibold tabular-nums">{{ s.upstreamWaiting }}</div>
+                <div class="text-[10px] uppercase tracking-wide text-muted">{{ t('card.queued') }}</div>
+              </div>
+              <div>
+                <div class="text-lg font-semibold tabular-nums">{{ Math.round(s.kvUsage * 100) }}%</div>
+                <div class="text-[10px] uppercase tracking-wide text-muted">{{ t('card.kvCache') }}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

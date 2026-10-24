@@ -33,6 +33,8 @@ export interface UserRow {
   disabled: number
   created_at: number
   last_login: number | null
+  /** UI language code; null = follow browser detection */
+  lang: string | null
 }
 
 export interface SessionUserRow {
@@ -43,6 +45,7 @@ export interface SessionUserRow {
   role: UserRole
   pass_hash: string
   disabled: number
+  lang: string | null
 }
 
 export interface GatewayClientRow {
@@ -101,6 +104,7 @@ CREATE TABLE IF NOT EXISTS users (
   role       TEXT NOT NULL DEFAULT 'admin',
   gitlab     INTEGER NOT NULL DEFAULT 0,
   disabled   INTEGER NOT NULL DEFAULT 0,
+  lang       TEXT,
   created_at INTEGER NOT NULL,
   last_login INTEGER
 );
@@ -202,6 +206,7 @@ export function useDb (): Database.Database {
     ensureColumn(db, 'users', 'disabled', 'INTEGER NOT NULL DEFAULT 0')
     ensureColumn(db, 'servers', 'gateway_mode', "TEXT NOT NULL DEFAULT 'on'")
     ensureColumn(db, 'servers', 'gateway_capacity', 'INTEGER')
+    ensureColumn(db, 'users', 'lang', 'TEXT')
     // an empty pass_hash could only ever come from the GitLab OAuth sign-up
     db.prepare("UPDATE users SET gitlab = 1 WHERE pass_hash = '' AND gitlab = 0").run()
   }
@@ -287,6 +292,11 @@ export function updatePassword (userId: number, passHash: string): void {
   useDb().prepare('UPDATE users SET pass_hash = ? WHERE id = ?').run(passHash, userId)
 }
 
+/** UI language of a user; null resets to browser detection. */
+export function updateUserLang (userId: number, lang: string | null): void {
+  useDb().prepare('UPDATE users SET lang = ? WHERE id = ?').run(lang, userId)
+}
+
 export function touchLastLogin (userId: number): void {
   useDb().prepare('UPDATE users SET last_login = ? WHERE id = ?').run(Date.now(), userId)
 }
@@ -301,7 +311,7 @@ export function createSession (tokenHash: string, userId: number, expiresAt: num
 
 export function getSessionUser (tokenHash: string): SessionUserRow | null {
   return useDb()
-    .prepare(`SELECT s.token_hash, s.user_id, s.expires_at, u.username, u.role, u.pass_hash, u.disabled
+    .prepare(`SELECT s.token_hash, s.user_id, s.expires_at, u.username, u.role, u.pass_hash, u.disabled, u.lang
               FROM sessions s JOIN users u ON u.id = s.user_id
               WHERE s.token_hash = ?`)
     .get(tokenHash) as SessionUserRow | null

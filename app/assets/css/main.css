@@ -5,3 +5,46 @@
    override primary/neutral in Settings (localStorage, applied by
    app/plugins/theme-color.ts). Do not set --ui-primary itself: that
    variable must hold a concrete color value, not a palette name. */
+
+/* Always reserve the scrollbar gutter so content never shifts sideways
+   when a page grows past one viewport or a modal locks the scroll.
+   color-scheme makes native scrollbars/controls match the theme at once. */
+html {
+  scrollbar-gutter: stable;
+  color-scheme: light dark;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--ui-text-muted) 50%, transparent) transparent;
+}
+
+/* WebKit still renders its own scrollbar instead of honoring scrollbar-color */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--ui-text-muted) 50%, transparent);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--ui-text-muted) 75%, transparent);
+}
+
+/* Page fade (transition name set on NuxtPage in app.vue). Opacity only, so
+   uPlot charts never re-layout mid-animation; disabled for reduced motion. */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.12s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: none;
+  }
+}

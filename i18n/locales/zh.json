@@ -5,7 +5,11 @@
     "servers": "服务器",
     "users": "用户",
     "settings": "设置",
-    "clients": "客户端"
+    "clients": "客户端",
+    "menu": "菜单"
+  },
+  "footer": {
+    "source": "源代码"
   },
   "common": {
     "addServer": "添加服务器",
@@ -13,6 +17,8 @@
     "save": "保存",
     "live": "实时",
     "polling": "轮询",
+    "liveHint": "通过 WebSocket 实时更新",
+    "pollHint": "无 WebSocket — 页面每 5 秒轮询 API",
     "or": "或",
     "ok": "确定"
   },
@@ -115,6 +121,9 @@
     "description": "后台任务间隔与数据保留，修改即时生效无需重启。",
     "appearance": "外观",
     "appearanceHelp": "主题仅保存在当前浏览器中，不会存到服务器。",
+    "language": "语言",
+    "languageAuto": "自动（跟随浏览器）",
+    "languageHelp": "保存在账户中；自动即跟随浏览器语言。",
     "colorMode": "模式",
     "accentColor": "强调色",
     "neutralPalette": "中性色板",
@@ -163,6 +172,7 @@
     "disabled": "身份验证当前已禁用",
     "failed": "出错了，请重试",
     "logout": "退出登录",
+    "logoutAs": "退出账号 {username}",
     "changePassword": "更改密码",
     "changePasswordHint": "更改当前用户的密码。当前会话保持登录，其他会话将被退出。",
     "currentPassword": "当前密码",
@@ -240,6 +250,7 @@
     "serversTitle": "网关路由",
     "noServers": "还没有服务器——请在“服务器”页面添加。",
     "inflight": "{n} / {cap}",
+    "inflightTitle": "进行中",
     "draining": "排空中",
     "off": "仅统计",
     "ejected": "已跳过",

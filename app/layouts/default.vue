@@ -1,110 +1,46 @@
 <script setup lang="ts">
-import type { Locale } from '#i18n'
-
-const route = useRoute()
-const { status, isAdmin, signOut } = useAuth()
-const authUser = computed(() => (status.value?.authEnabled ? status.value.user : null))
-// use setLocale (not a direct locale write) so lazy messages are loaded
-// and the detectBrowserLanguage cookie is updated
-const { locale, setLocale, t } = useI18n()
-const selectedLocale = computed({
-  get: () => locale.value,
-  set: (value: string) => { void setLocale(value as Locale) }
-})
-
-// the user table is only listed for admins while auth is on
-const nav = computed(() => [
-  { to: '/', icon: 'i-lucide-layout-dashboard', label: 'nav.dashboard' },
-  { to: '/heatmap', icon: 'i-lucide-grid-3x3', label: 'nav.heatmap' },
-  { to: '/servers', icon: 'i-lucide-server', label: 'nav.servers' },
-  // gateway clients work with auth off too (trusted LAN), so the page is only
-  // admin-gated while auth is on (the API enforces it regardless)
-  ...(status.value?.authEnabled && !isAdmin.value
-    ? []
-    : [{ to: '/clients', icon: 'i-lucide-key-round', label: 'nav.clients' }]),
-  ...(status.value?.authEnabled && isAdmin.value
-    ? [{ to: '/users', icon: 'i-lucide-users', label: 'nav.users' }]
-    : []),
-  { to: '/settings', icon: 'i-lucide-settings', label: 'nav.settings' }
-])
-
-// language names are shown in their own language on purpose
-const localeItems = [
-  { value: 'en', label: 'English' },
-  { value: 'ru', label: 'Русский' },
-  { value: 'de', label: 'Deutsch' },
-  { value: 'es', label: 'Español' },
-  { value: 'fr', label: 'Français' },
-  { value: 'zh', label: '中文' }
-]
-
-function isActive (to: string) {
-  if (to === '/') return route.path === '/'
-  return route.path === to || route.path.startsWith(`${to}/`)
-}
+const { t } = useI18n()
+const slideoverOpen = ref(false)
 </script>
 
 <template>
-  <div class="min-h-screen bg-default">
-    <header class="border-b border-default bg-elevated/50 backdrop-blur sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4 lg:gap-6">
-        <NuxtLink to="/" class="flex items-center gap-2 font-semibold text-highlighted shrink-0">
-          <img src="/logo.svg" class="size-6" alt="" />
-          <span>MonStrata</span>
-        </NuxtLink>
-        <nav class="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
-          <NuxtLink
-            v-for="item in nav"
-            :key="item.to"
-            :to="item.to"
-            class="px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap"
-            :class="isActive(item.to)
-              ? 'bg-primary/10 text-primary'
-              : 'text-muted hover:text-default hover:bg-elevated'"
-          >
-            <UIcon :name="item.icon" class="size-4" />
-            {{ t(item.label) }}
-          </NuxtLink>
-        </nav>
-        <USelect
-          v-model="selectedLocale"
-          :items="localeItems"
-          size="sm"
-          color="neutral"
-          variant="ghost"
-          class="w-28 shrink-0"
-          :aria-label="t('nav.settings')"
-          icon="i-lucide-languages"
-        />
-        <UButton
-          v-if="authUser"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          icon="i-lucide-log-out"
-          :aria-label="t('auth.logout')"
-          class="shrink-0"
-          @click="signOut()"
-        >
-          <span class="hidden md:inline max-w-32 truncate">{{ authUser.username }}</span>
-        </UButton>
-        <!-- ClientOnly + fallback: avoids the stale aria-label hydration
-             mismatch when the system theme differs from the SSR default -->
-        <ClientOnly>
-          <UColorModeButton
+  <div class="min-h-svh flex bg-default">
+    <aside class="hidden lg:flex flex-col w-56 shrink-0 border-r border-default sticky top-0 h-svh">
+      <AppSidebarContent />
+    </aside>
+
+    <div class="flex-1 min-w-0 flex flex-col min-h-svh">
+      <!-- slim mobile bar; the sidebar content moves into a slideover -->
+      <header class="lg:hidden sticky top-0 z-40 border-b border-default bg-elevated/50 backdrop-blur">
+        <div class="h-14 px-3 flex items-center gap-2">
+          <UButton
             color="neutral"
             variant="ghost"
-            size="sm"
-            class="shrink-0"
+            icon="i-lucide-menu"
+            :aria-label="t('nav.menu')"
+            @click="slideoverOpen = true"
           />
-          <template #fallback>
-            <div class="size-8" />
-          </template>
-        </ClientOnly>
-      </div>
-    </header>
-    <main class="max-w-7xl mx-auto px-4 py-6">
-      <slot />
-    </main>
+          <NuxtLink to="/" class="flex items-center gap-2 font-semibold text-highlighted">
+            <img src="/logo.svg" class="size-6" alt="" />
+            <span>MonStrata</span>
+          </NuxtLink>
+        </div>
+      </header>
+
+      <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6">
+        <slot />
+      </main>
+    </div>
+
+    <USlideover
+      v-model:open="slideoverOpen"
+      side="left"
+      :title="t('nav.menu')"
+      :ui="{ body: 'p-0' }"
+    >
+      <template #body>
+        <AppSidebarContent @dismiss="slideoverOpen = false" />
+      </template>
+    </USlideover>
   </div>
 </template>

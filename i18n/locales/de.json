@@ -5,7 +5,11 @@
     "servers": "Server",
     "users": "Benutzer",
     "settings": "Einstellungen",
-    "clients": "Clients"
+    "clients": "Clients",
+    "menu": "Menü"
+  },
+  "footer": {
+    "source": "Quellcode"
   },
   "common": {
     "addServer": "Server hinzufügen",
@@ -13,6 +17,8 @@
     "save": "Speichern",
     "live": "Live",
     "polling": "Abfrage",
+    "liveHint": "Live-Updates über WebSocket",
+    "pollHint": "Kein WebSocket — die Seite fragt die API alle 5 s ab",
     "or": "oder",
     "ok": "OK"
   },
@@ -115,6 +121,9 @@
     "description": "Intervalle der Hintergrundjobs und Datenaufbewahrung. Änderungen wirken ohne Neustart.",
     "appearance": "Darstellung",
     "appearanceHelp": "Das Design wird nur in diesem Browser gespeichert, nicht auf dem Server.",
+    "language": "Sprache",
+    "languageAuto": "Automatisch (Browser)",
+    "languageHelp": "Im Konto gespeichert; „Automatisch“ folgt der Browsersprache.",
     "colorMode": "Modus",
     "accentColor": "Akzentfarbe",
     "neutralPalette": "Neutrale Palette",
@@ -163,6 +172,7 @@
     "disabled": "Authentifizierung ist derzeit deaktiviert",
     "failed": "Etwas ist schiefgelaufen, bitte erneut versuchen",
     "logout": "Abmelden",
+    "logoutAs": "Konto {username} abmelden",
     "changePassword": "Passwort ändern",
     "changePasswordHint": "Ändert das Passwort des aktuellen Benutzers. Diese Sitzung bleibt angemeldet, andere Sitzungen werden abgemeldet.",
     "currentPassword": "Aktuelles Passwort",
@@ -240,6 +250,7 @@
     "serversTitle": "Gateway-Routing",
     "noServers": "Noch keine Server — füge sie auf der Server-Seite hinzu.",
     "inflight": "{n} / {cap}",
+    "inflightTitle": "Aktiv",
     "draining": "leerläuft",
     "off": "nur Statistik",
     "ejected": "übersprungen",

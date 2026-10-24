@@ -18,6 +18,8 @@ export interface AuthUser {
   role: 'admin' | 'user'
   /** false for GitLab-created users who have not set a local password yet */
   hasPassword: boolean
+  /** UI language saved on the account; null = browser detection */
+  lang: string | null
 }
 
 export interface VerifiedSession {
@@ -47,7 +49,7 @@ export function verifySessionToken (token: string | null | undefined): VerifiedS
   // opportunistic cleanup, cheap enough to run sporadically
   if (Math.random() < 0.02) purgeExpiredSessions(now)
   return {
-    user: { id: row.user_id, username: row.username, role: row.role, hasPassword: row.pass_hash !== '' },
+    user: { id: row.user_id, username: row.username, role: row.role, hasPassword: row.pass_hash !== '', lang: row.lang ?? null },
     tokenHash,
     refreshed
   }

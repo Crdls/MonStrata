@@ -16,7 +16,8 @@ const uiLocale = computed(() => uiLocales[locale.value] ?? en)
 <template>
   <UApp :locale="uiLocale">
     <NuxtLayout>
-      <NuxtPage />
+      <!-- fade class pair lives in assets/css/main.css -->
+      <NuxtPage :page-transition="{ name: 'fade' }" />
     </NuxtLayout>
   </UApp>
 </template>

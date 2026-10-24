@@ -5,7 +5,11 @@
     "servers": "Servidores",
     "users": "Usuarios",
     "settings": "Ajustes",
-    "clients": "Clientes"
+    "clients": "Clientes",
+    "menu": "Menú"
+  },
+  "footer": {
+    "source": "Código fuente"
   },
   "common": {
     "addServer": "Añadir servidor",
@@ -13,6 +17,8 @@
     "save": "Guardar",
     "live": "En vivo",
     "polling": "Sondeo",
+    "liveHint": "Actualizaciones en vivo por WebSocket",
+    "pollHint": "Sin WebSocket: la página consulta la API cada 5 s",
     "or": "o",
     "ok": "OK"
   },
@@ -115,6 +121,9 @@
     "description": "Intervalos de tareas en segundo plano y retención de datos. Los cambios se aplican sin reiniciar.",
     "appearance": "Apariencia",
     "appearanceHelp": "El tema se guarda solo en este navegador, no en el servidor.",
+    "language": "Idioma",
+    "languageAuto": "Automático (navegador)",
+    "languageHelp": "Se guarda en tu cuenta; automático sigue el idioma del navegador.",
     "colorMode": "Modo",
     "accentColor": "Color de acento",
     "neutralPalette": "Paleta neutra",
@@ -163,6 +172,7 @@
     "disabled": "La autenticación está desactivada",
     "failed": "Algo salió mal, inténtalo de nuevo",
     "logout": "Cerrar sesión",
+    "logoutAs": "Cerrar la sesión de {username}",
     "changePassword": "Cambiar contraseña",
     "changePasswordHint": "Cambia la contraseña del usuario actual. Esta sesión seguirá activa; las demás se cerrarán.",
     "currentPassword": "Contraseña actual",
@@ -240,6 +250,7 @@
     "serversTitle": "Enrutado de la pasarela",
     "noServers": "Aún no hay servidores — añádelos en la página Servidores.",
     "inflight": "{n} / {cap}",
+    "inflightTitle": "En curso",
     "draining": "vaciando",
     "off": "solo estadísticas",
     "ejected": "omitido",

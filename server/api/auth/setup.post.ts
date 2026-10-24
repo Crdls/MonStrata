@@ -14,5 +14,5 @@ export default defineEventHandler(async (event) => {
   if (getUserByUsername(username)) throw createError({ statusCode: 409, statusMessage: 'Setup already completed' })
   const user = createUser(username, await hashPassword(body.password), 'admin', false)
   startSession(event, user.id)
-  return authStatus(event, { id: user.id, username: user.username, role: user.role, hasPassword: true })
+  return authStatus(event, { id: user.id, username: user.username, role: user.role, hasPassword: true, lang: null })
 })

@@ -27,15 +27,16 @@ with selectable period.
   per browser (cookie).
 - **Settings** — poller interval and rollup interval (30 s by default),
   retention depth for raw data and hourly aggregates. Applied on the fly.
-- **Theme** — light / dark / system: quick toggle in the header or a
-  selector in Settings; accent and neutral palettes selectable in
-  Settings; stored per browser (localStorage).
+- **Theme** — light / dark / system: quick toggle in the sidebar (a drawer
+  on mobile) or a selector in Settings; accent and neutral palettes
+  selectable in Settings; stored per browser (localStorage).
 - **Mascot** — a horned grinning monster whose smile is a green load-chart
-  zigzag: `public/logo.svg` in the header and on the login page,
+  zigzag: `public/logo.svg` in the sidebar and on the login page,
   `public/favicon.svg` as the tab icon.
 - **i18n** — UI in English, Russian, German, Spanish, French and Chinese;
-  language is detected from the browser and switched in the header
-  (stored in the `monstrata_locale` cookie). Strings live in
+  language is auto-detected from the browser and can be pinned per account
+  in Settings (the `monstrata_locale` cookie remembers the choice until a
+  language is saved on the account). Strings live in
   `i18n/locales/*.json`, a new language = one JSON file + an entry in
   `nuxt.config.ts`.
 - **Optional authentication** — enable `auth.enabled` in `config.json`;
@@ -125,7 +126,7 @@ With auth enabled:
   may do everything, as before);
 - the interval and retention settings on the Settings page are editable by
   admins only (the password and appearance cards stay available to everyone);
-- sign out in the header; the Settings page can change your own password
+- sign out in the sidebar; the Settings page can change your own password
   (the current session stays signed in, others are signed out).
 
 ### Sign in with GitLab

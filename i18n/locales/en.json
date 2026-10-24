@@ -5,7 +5,11 @@
     "servers": "Servers",
     "users": "Users",
     "settings": "Settings",
-    "clients": "Clients"
+    "clients": "Clients",
+    "menu": "Menu"
+  },
+  "footer": {
+    "source": "Source code"
   },
   "common": {
     "addServer": "Add server",
@@ -13,6 +17,8 @@
     "save": "Save",
     "live": "Live",
     "polling": "Polling",
+    "liveHint": "Live updates over WebSocket",
+    "pollHint": "No WebSocket — the page polls the API every 5 s",
     "or": "or",
     "ok": "OK"
   },
@@ -115,6 +121,9 @@
     "description": "Background job intervals and data retention. Changes apply without a restart.",
     "appearance": "Appearance",
     "appearanceHelp": "The theme is stored in this browser only, not on the server.",
+    "language": "Language",
+    "languageAuto": "Auto (browser)",
+    "languageHelp": "Stored on your account; auto follows the browser language.",
     "colorMode": "Mode",
     "accentColor": "Accent color",
     "neutralPalette": "Neutral palette",
@@ -163,6 +172,7 @@
     "disabled": "Authentication is currently disabled",
     "failed": "Something went wrong, try again",
     "logout": "Sign out",
+    "logoutAs": "Sign out of {username}",
     "changePassword": "Change password",
     "changePasswordHint": "Changes the password of the current user. This session stays signed in, other sessions are signed out.",
     "currentPassword": "Current password",
@@ -240,6 +250,7 @@
     "serversTitle": "Gateway routing",
     "noServers": "No servers yet — add them on the Servers page.",
     "inflight": "{n} / {cap}",
+    "inflightTitle": "In flight",
     "draining": "draining",
     "off": "stats only",
     "ejected": "skipped",

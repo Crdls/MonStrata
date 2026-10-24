@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Locale } from '#i18n'
+
 interface Settings {
   scrapeIntervalS: number
   rollupIntervalS: number
@@ -11,7 +13,7 @@ const { data, refresh } = useFetch<Settings>('/api/settings', {
   headers: useRequestHeaders(['cookie'])
 })
 const toast = useToast()
-const { t } = useI18n()
+const { t, setLocale } = useI18n()
 const { status, isAdmin } = useAuth()
 
 const authed = computed(() => Boolean(status.value?.authEnabled && status.value?.user))
@@ -73,6 +75,47 @@ async function changePassword () {
   }
 }
 
+// language names are shown in their own language on purpose
+const localeItems = computed(() => [
+  { value: 'auto', label: t('settings.languageAuto') },
+  { value: 'en', label: 'English' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'es', label: 'Español' },
+  { value: 'fr', label: 'Français' },
+  { value: 'zh', label: '中文' }
+])
+const langModel = ref<string>(status.value?.user?.lang ?? 'auto')
+
+async function onLangChange (value: string | number | null) {
+  const lang = value === 'auto' || value === null ? null : String(value)
+  // with a session the choice goes to the user record; with auth off this
+  // 401s and only the locale cookie changes (the pre-login behavior)
+  if (status.value?.authEnabled && status.value.user) {
+    try {
+      await $fetch('/api/auth/lang', { method: 'PUT', body: { lang } })
+      status.value.user.lang = lang
+      toast.add({ title: t('settings.toastSaved'), color: 'success' })
+    } catch (err: unknown) {
+      toast.add({
+        title: t('settings.toastSaveFailed'),
+        description: (err as { statusMessage?: string })?.statusMessage ?? String(err),
+        color: 'error'
+      })
+      return
+    }
+  }
+  if (lang) {
+    await setLocale(lang as Locale)
+    return
+  }
+  // auto: drop the cookie and reload so i18n re-detects the browser language
+  if (import.meta.client) {
+    document.cookie = 'monstrata_locale=; path=/; max-age=0'
+    location.reload()
+  }
+}
+
 // theme colors: write straight into appConfig (the Nuxt UI colors plugin
 // regenerates the CSS variables) and persist the choice in localStorage
 const appConfig = useAppConfig()
@@ -97,7 +140,51 @@ const neutralColor = computed({
     <h1 class="text-xl font-semibold mb-1">{{ t('settings.title') }}</h1>
     <p v-if="canEditIntervals" class="text-sm text-muted mb-5">{{ t('settings.description') }}</p>
 
-    <UCard v-if="canEditIntervals">
+    <UCard>
+      <h2 class="text-base font-semibold mb-1">{{ t('settings.appearance') }}</h2>
+      <p class="text-sm text-muted mb-4">{{ t('settings.appearanceHelp') }}</p>
+      <div class="space-y-5">
+        <UFormField :label="t('settings.colorMode')">
+          <UColorModeSelect class="w-48" :aria-label="t('settings.appearance')" />
+        </UFormField>
+
+        <UFormField :label="t('settings.language')" :help="t('settings.languageHelp')">
+          <USelect v-model="langModel" :items="localeItems" class="w-48" :aria-label="t('settings.language')" @update:model-value="onLangChange" />
+        </UFormField>
+
+        <UFormField :label="t('settings.accentColor')">
+          <div class="flex flex-wrap gap-2.5">
+            <button
+              v-for="s in primarySwatches"
+              :key="s.value"
+              type="button"
+              class="size-6 rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-primary"
+              :class="[s.class, accentColor === s.value ? 'ring-2 ring-offset-2 ring-offset-elevated ring-primary' : '']"
+              :aria-label="t(`settings.themeColor.${s.value}`)"
+              :aria-pressed="accentColor === s.value"
+              @click="accentColor = s.value"
+            />
+          </div>
+        </UFormField>
+
+        <UFormField :label="t('settings.neutralPalette')">
+          <div class="flex flex-wrap gap-2.5">
+            <button
+              v-for="s in neutralSwatches"
+              :key="s.value"
+              type="button"
+              class="size-6 rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-primary"
+              :class="[s.class, neutralColor === s.value ? 'ring-2 ring-offset-2 ring-offset-elevated ring-primary' : '']"
+              :aria-label="t(`settings.themeColor.${s.value}`)"
+              :aria-pressed="neutralColor === s.value"
+              @click="neutralColor = s.value"
+            />
+          </div>
+        </UFormField>
+      </div>
+    </UCard>
+
+    <UCard v-if="canEditIntervals" class="mt-6">
       <form class="space-y-5" @submit.prevent="save">
         <UFormField :label="t('settings.scrape')" :help="t('settings.scrapeHelp')">
           <UInputNumber v-model="form.scrapeIntervalS" :min="2" :max="600" :step="1" class="w-40" />
@@ -154,44 +241,5 @@ const neutralColor = computed({
       </form>
     </UCard>
 
-    <UCard class="mt-6">
-      <h2 class="text-base font-semibold mb-1">{{ t('settings.appearance') }}</h2>
-      <p class="text-sm text-muted mb-4">{{ t('settings.appearanceHelp') }}</p>
-      <div class="space-y-5">
-        <UFormField :label="t('settings.colorMode')">
-          <UColorModeSelect class="w-48" :aria-label="t('settings.appearance')" />
-        </UFormField>
-
-        <UFormField :label="t('settings.accentColor')">
-          <div class="flex flex-wrap gap-2.5">
-            <button
-              v-for="s in primarySwatches"
-              :key="s.value"
-              type="button"
-              class="size-6 rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-primary"
-              :class="[s.class, accentColor === s.value ? 'ring-2 ring-offset-2 ring-offset-elevated ring-primary' : '']"
-              :aria-label="t(`settings.themeColor.${s.value}`)"
-              :aria-pressed="accentColor === s.value"
-              @click="accentColor = s.value"
-            />
-          </div>
-        </UFormField>
-
-        <UFormField :label="t('settings.neutralPalette')">
-          <div class="flex flex-wrap gap-2.5">
-            <button
-              v-for="s in neutralSwatches"
-              :key="s.value"
-              type="button"
-              class="size-6 rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-primary"
-              :class="[s.class, neutralColor === s.value ? 'ring-2 ring-offset-2 ring-offset-elevated ring-primary' : '']"
-              :aria-label="t(`settings.themeColor.${s.value}`)"
-              :aria-pressed="neutralColor === s.value"
-              @click="neutralColor = s.value"
-            />
-          </div>
-        </UFormField>
-      </div>
-    </UCard>
   </div>
 </template>

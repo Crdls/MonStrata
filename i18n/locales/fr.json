@@ -5,7 +5,11 @@
     "servers": "Serveurs",
     "users": "Utilisateurs",
     "settings": "Réglages",
-    "clients": "Clients"
+    "clients": "Clients",
+    "menu": "Menu"
+  },
+  "footer": {
+    "source": "Code source"
   },
   "common": {
     "addServer": "Ajouter un serveur",
@@ -13,6 +17,8 @@
     "save": "Enregistrer",
     "live": "En direct",
     "polling": "Sondage",
+    "liveHint": "Mises à jour en direct par WebSocket",
+    "pollHint": "Pas de WebSocket — la page interroge l'API toutes les 5 s",
     "or": "ou",
     "ok": "OK"
   },
@@ -115,6 +121,9 @@
     "description": "Intervalles des tâches d'arrière-plan et rétention des données. Appliqués sans redémarrage.",
     "appearance": "Apparence",
     "appearanceHelp": "Le thème est enregistré uniquement dans ce navigateur, pas sur le serveur.",
+    "language": "Langue",
+    "languageAuto": "Auto (navigateur)",
+    "languageHelp": "Enregistré sur votre compte ; auto suit la langue du navigateur.",
     "colorMode": "Mode",
     "accentColor": "Couleur d'accent",
     "neutralPalette": "Palette neutre",
@@ -163,6 +172,7 @@
     "disabled": "L'authentification est actuellement désactivée",
     "failed": "Une erreur est survenue, réessayez",
     "logout": "Se déconnecter",
+    "logoutAs": "Se déconnecter de {username}",
     "changePassword": "Changer le mot de passe",
     "changePasswordHint": "Change le mot de passe de l'utilisateur actuel. Cette session reste connectée, les autres seront déconnectées.",
     "currentPassword": "Mot de passe actuel",
@@ -240,6 +250,7 @@
     "serversTitle": "Routage de la passerelle",
     "noServers": "Aucun serveur — ajoute-les sur la page Serveurs.",
     "inflight": "{n} / {cap}",
+    "inflightTitle": "En cours",
     "draining": "vidage",
     "off": "stats seulement",
     "ejected": "ignoré",
