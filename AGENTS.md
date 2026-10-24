@@ -4,8 +4,8 @@ MonStrata: Nuxt 4 monitor for Strata inference engines. Scrapes Prometheus `/met
 
 ## Commands
 
-- `npm run dev` — dev server on http://localhost:3003 (port set via `devServer.port` in `nuxt.config.ts`).
-- The dev server is usually already running by the user on :3003 — check `http://localhost:3003` before starting another one; don't kill or restart it without being asked.
+- `npm run dev` — dev server on http://localhost:3333 (port set via `devServer.port` in `nuxt.config.ts`).
+- The dev server is usually already running by the user on :3333 — check `http://localhost:3333` before starting another one; don't kill or restart it without being asked.
 - `node test/parse.test.mjs`, `node test/auth.test.mjs`, `node test/config.test.mjs` and `node test/gateway.test.mjs` — the entire test suite. Bare Node scripts, no test framework; they import `.ts` directly, so type-stripping-capable Node is required (README: Node ≥ 22.22 or ≥ 24.15; older Node 24 prints EBADENGINE).
 - `npm run build && node .output/server/index.mjs` — production run. `npm run build` is the only whole-project validation: there is **no** lint, formatter, typecheck script, or CI. Match existing style (2 spaces, no semicolons, single quotes, `foo (args)` space before parens).
 - Test fixtures are real `/metrics` captures in `test/fixtures/`.

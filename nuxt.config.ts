@@ -2,7 +2,7 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxtjs/i18n'],
   css: ['~/assets/css/main.css'],
   devServer: {
-    port: 3003
+    port: 3333
   },
   nitro: {
     // native module must not be bundled
