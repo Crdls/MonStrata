@@ -313,5 +313,29 @@
     "toastDeleted": "客户端已删除",
     "toastDeleteFailed": "无法删除客户端",
     "toastIpsFailed": "无法加载 IP 记录"
+  },
+  "update": {
+    "title": "更新",
+    "description": "MonStrata 每 6 小时将当前提交与 origin 比较。应用更新会拉取新代码、重新构建并重启服务器。",
+    "upToDate": "已是最新",
+    "updateAvailable": "有可用更新",
+    "checkFailed": "检查失败",
+    "neverChecked": "尚未检查",
+    "notGit": "不是 git 克隆——无法更新",
+    "devMode": "开发模式——请手动更新（update.sh / update.bat）",
+    "checkedAt": "检查于 {time}",
+    "compare": "查看变更",
+    "check": "立即检查",
+    "apply": "更新并重启",
+    "applyTitle": "应用此更新？",
+    "applyText": "MonStrata 将拉取新代码、重新构建并重启。网关队列和进行中的请求将会丢失。",
+    "applyConfirm": "更新",
+    "restarting": "正在重启，页面即将刷新…",
+    "backOnline": "MonStrata 已恢复，版本 {version}",
+    "restartTimeout": "服务器返回过慢——请检查 data/update.log",
+    "lastFailed": "上次更新失败（{step}）——详见 data/update.log",
+    "unknownVersion": "未知",
+    "toastCheckFailed": "无法检查更新",
+    "toastApplyFailed": "无法启动更新"
   }
 }

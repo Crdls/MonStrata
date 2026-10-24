@@ -27,6 +27,9 @@ with selectable period.
   per browser (cookie).
 - **Settings** — poller interval and rollup interval (30 s by default),
   retention depth for raw data and hourly aggregates. Applied on the fly.
+- **Self-update** — the sidebar shows the running commit, `origin` is checked
+  every 6 hours, and Settings → Updates pulls, rebuilds and restarts the
+  server in one click (admins while auth is on).
 - **Theme** — light / dark / system: quick toggle in the sidebar (a drawer
   on mobile) or a selector in Settings; accent and neutral palettes
   selectable in Settings; stored per browser (localStorage).
@@ -69,9 +72,19 @@ install or build step may get killed with exit code 135 — cap the Node heap:
 
 ## Updating
 
-The same steps as a one-shot script: `./update.sh` on Linux, `update.bat` on
-Windows. It runs `git pull`, `npm install --omit=dev` and `npm run build`, and
-also fits a fresh clone (the pull is a no-op there). Restart the server
+The running build is a git checkout, so MonStrata knows its own commit and
+shows it in the sidebar. Every 6 hours (or on "Check now") it asks `origin`
+whether the branch moved; Settings → Updates then offers "Update & restart"
+(admins while auth is on). That runs `scripts/autoupdate.mjs` in the
+background: wait for the server to exit, `git pull --ff-only`,
+`npm install --omit=dev`, `npm run build`, then start the server again — the
+page reloads itself once the new build answers. The whole run is logged to
+`data/update.log`; if a step fails (e.g. local changes blocking the pull)
+the old build is restarted and Settings shows where it broke. In dev mode
+updates are never applied.
+
+`./update.sh` on Linux and `update.bat` on Windows do the same steps by hand
+and also fit a fresh clone (the pull is a no-op there). Restart the server
 afterwards to apply the new build.
 
 ## Running
@@ -269,12 +282,14 @@ server/
   utils/        Prometheus parser, SQLite, metric catalog, scraper, rollups,
                 auth primitives, permission rules, GitLab OAuth helpers,
                 gateway/ (routing, priority queue, session affinity, proxy)
-  plugins/      background loops (scrape, rollups, gateway)
+  plugins/      background loops (scrape, rollups, gateway, update check)
   api/          servers CRUD, live, range, heatmap, settings, auth, users,
-                gateway (status, clients, rotate, IPs)
+                gateway (status, clients, rotate, IPs), update (status/check/apply)
   routes/       _ws.ts WebSocket endpoint, v1/[...].ts gateway proxy
 scripts/        reset-password.mjs - lost password recovery (no email)
-test/           parser test on real /metrics fixtures + auth/config/gateway tests
+                autoupdate.mjs - applied by the Update button: pull + install
+                                 + build + restart (log: data/update.log)
+test/           parser test on real /metrics fixtures + auth/config/gateway/update tests
 update.sh|.bat  one-shot install/update: pull + install --omit=dev + build
 ```
 
@@ -285,6 +300,7 @@ update.sh|.bat  one-shot install/update: pull + install --omit=dev + build
 - `GET /api/range?serverId&metric&from&to` — metric history (raw/hourly/daily — the source is picked automatically)
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — servers × buckets matrix
 - `GET|PUT /api/settings` (`PUT`: admin only when auth is on)
+- `GET /api/update/status` — running commit and update availability; `POST /api/update/check` — re-check now; `POST /api/update/apply` — pull, rebuild and restart via `scripts/autoupdate.mjs` (admin only when auth is on; disabled in dev mode)
 - `/api/auth/status|setup|login|logout|password` — auth (public: status, setup, login, logout)
 - `GET /api/auth/gitlab/start` — redirect to GitLab; `GET /api/auth/gitlab/callback` — the OAuth callback endpoint: register exactly this URL as the redirect URI in the GitLab application
 - `GET /api/users`, `PATCH|DELETE /api/users/:id` — user management (admins only; PATCH takes `role`, `disabled`, `password`)
@@ -300,6 +316,7 @@ node test/parse.test.mjs
 node test/auth.test.mjs
 node test/config.test.mjs
 node test/gateway.test.mjs
+node test/update.test.mjs
 ```
 
 ## Notes

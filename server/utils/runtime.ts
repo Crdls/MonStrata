@@ -31,6 +31,38 @@ interface Runtime {
   gitlabStates: Map<string, number>
   /** gateway/limiter state, lazily created by gateway/state.ts */
   gateway?: GatewayRuntime
+  /** version check/update state, see server/utils/update.ts */
+  update?: UpdateRuntime
+}
+
+/** Outcome of one autoupdate run, written by scripts/autoupdate.mjs. */
+export interface LastUpdateResult {
+  startedAt: number
+  finishedAt: number
+  ok: boolean
+  /** failed command (e.g. `git pull`) when ok is false */
+  step: string | null
+  error: string | null
+}
+
+/** Process-wide update-check state (see server/utils/update.ts). */
+export interface UpdateRuntime {
+  /** commit of the running checkout; null when git/the checkout is missing */
+  currentSha: string | null
+  /** checked-out branch (null while detached or without git) */
+  branch: string | null
+  /** https URL of the origin remote; null when it is not GitHub */
+  repoUrl: string | null
+  /** branch head on origin from the last successful check */
+  latestSha: string | null
+  checkedAt: number | null
+  checking: boolean
+  error: string | null
+  /** an update was kicked off and this process is about to exit */
+  applying: boolean
+  /** result of the last autoupdate run (data/last-update.json) */
+  lastUpdate: LastUpdateResult | null
+  checkTimer?: ReturnType<typeof setTimeout>
 }
 
 /** Process-wide gateway state (see server/utils/gateway/state.ts). */
@@ -81,6 +113,19 @@ export function runtime (): Runtime {
       affinity: new Map(),
       ipAgg: new Map(),
       usageAgg: new Map()
+    }
+  }
+  if (!rt.update) {
+    rt.update = {
+      currentSha: null,
+      branch: null,
+      repoUrl: null,
+      latestSha: null,
+      checkedAt: null,
+      checking: false,
+      error: null,
+      applying: false,
+      lastUpdate: null
     }
   }
   return rt

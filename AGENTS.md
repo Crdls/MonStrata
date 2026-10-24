@@ -35,6 +35,11 @@ MonStrata: Nuxt 4 monitor for Strata inference engines. Scrapes Prometheus `/met
 - Admission control is gateway-owned: the gateway's own inflight counter is authoritative (capacity: `servers.gateway_capacity` → `strata:live_slots` → `gateway.defaultCapacity`), and a server with scrape-reported `waiting > 0`, KV usage ≥ 95% or a recent live error (`ejectionS`) temporarily takes no new work — this keeps the upstream engine's own FIFO queue empty so the gateway priorities mean something.
 - `gateway.enabled` in `config.json` is false by default and must stay that way; `servers.gateway_mode` (`on | drain | off`) and `gateway_capacity` are edited via PATCH `/api/servers/:id` and the Servers page; client CRUD + status live under `/api/gateway/*` (admin-only while auth is on) with the `/clients` page. Restarting MonStrata drops in-memory queues (documented in README).
 
+## Version check & updates
+
+- The version is the checkout's commit SHA (no tags, no `version` in package.json). `server/utils/update.ts` holds the pure parsing helpers (tested by `test/update.test.mjs` — keep its relative imports `.ts`-explicit) plus the `git ls-remote` check; state lives on `runtime().update` and the loop (first check 30 s after boot, then 6 h) is `server/plugins/update-check.ts`.
+- Applying is manual-only, never automatic: `POST /api/update/apply` (admin while auth is on) spawns detached `scripts/autoupdate.mjs` (wait for exit → pull --ff-only → install → build → restart, console + result in `data/update.log`/`last-update.json`) and exits; disabled in dev mode. `update.sh|.bat` remain the offline/fresh-clone path.
+
 ## i18n
 
 - Six locales in `i18n/locales/*.json`; `en.json` is canonical and all six are currently key-synced — add every new UI string to all six files. A new language = one JSON file + entry in `nuxt.config.ts` (strategy `no_prefix`, cookie `monstrata_locale`).

@@ -313,5 +313,29 @@
     "toastDeleted": "Client gelöscht",
     "toastDeleteFailed": "Client konnte nicht gelöscht werden",
     "toastIpsFailed": "IP-Historie konnte nicht geladen werden"
+  },
+  "update": {
+    "title": "Aktualisierungen",
+    "description": "MonStrata vergleicht den laufenden Commit alle 6 Stunden mit origin. Ein Update holt den neuen Code, baut neu und startet den Server neu.",
+    "upToDate": "Aktuell",
+    "updateAvailable": "Update verfügbar",
+    "checkFailed": "Update-Prüfung fehlgeschlagen",
+    "neverChecked": "Noch nicht geprüft",
+    "notGit": "Kein Git-Checkout — Updates nicht verfügbar",
+    "devMode": "Dev-Modus — Updates von Hand einspielen (update.sh / update.bat)",
+    "checkedAt": "Geprüft um {time}",
+    "compare": "Änderungen ansehen",
+    "check": "Jetzt prüfen",
+    "apply": "Update & Neustart",
+    "applyTitle": "Update anwenden?",
+    "applyText": "MonStrata holt den neuen Code, baut neu und startet neu. Die Gateway-Warteschlange und laufende Anfragen gehen verloren.",
+    "applyConfirm": "Update",
+    "restarting": "Neustart, diese Seite lädt gleich neu…",
+    "backOnline": "MonStrata ist zurück mit Version {version}",
+    "restartTimeout": "Der Server kommt zu langsam zurück — data/update.log prüfen",
+    "lastFailed": "Letztes Update fehlgeschlagen ({step}) — data/update.log ansehen",
+    "unknownVersion": "unbekannt",
+    "toastCheckFailed": "Update-Prüfung nicht möglich",
+    "toastApplyFailed": "Update konnte nicht gestartet werden"
   }
 }

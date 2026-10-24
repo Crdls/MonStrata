@@ -133,6 +133,81 @@ const neutralColor = computed({
     storeTheme()
   }
 })
+
+// version and self-update: anyone can check, applying is admin-only while auth is on
+const { status: upd, refresh: refreshUpdate, checkNow } = useUpdate()
+const canApply = computed(() =>
+  (!status.value?.authEnabled || isAdmin.value) &&
+  Boolean(upd.value?.currentSha) && Boolean(upd.value?.updateAvailable) &&
+  !upd.value?.dev && !upd.value?.applying
+)
+const updateChecking = ref(false)
+const applyOpen = ref(false)
+const restarting = ref(false)
+// only surface a failed autoupdate run; a successful one is visible in the version itself
+const failedUpdate = computed(() => (upd.value?.lastUpdate && !upd.value.lastUpdate.ok ? upd.value.lastUpdate : null))
+
+function fmtTime (ms: number) {
+  return new Date(ms).toLocaleString()
+}
+
+async function checkUpdate () {
+  if (updateChecking.value) return
+  updateChecking.value = true
+  try {
+    await checkNow()
+  } catch (err: unknown) {
+    toast.add({
+      title: t('update.toastCheckFailed'),
+      description: (err as { statusMessage?: string })?.statusMessage ?? String(err),
+      color: 'error'
+    })
+  } finally {
+    updateChecking.value = false
+  }
+}
+
+async function runUpdate () {
+  const from = upd.value?.currentSha ?? ''
+  const startedAt = Date.now()
+  applyOpen.value = false
+  try {
+    await $fetch('/api/update/apply', { method: 'POST' })
+  } catch (err: unknown) {
+    toast.add({
+      title: t('update.toastApplyFailed'),
+      description: (err as { statusMessage?: string })?.statusMessage ?? String(err),
+      color: 'error'
+    })
+    return
+  }
+  // the server exits for the rebuild - poll until the new build answers
+  restarting.value = true
+  const deadline = Date.now() + 240_000
+  while (Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    try {
+      const st = await $fetch<{
+        currentSha: string | null
+        lastUpdate: { startedAt: number, ok: boolean, step: string | null } | null
+      }>('/api/update/status')
+      if (st.currentSha && st.currentSha !== from) {
+        toast.add({ title: t('update.backOnline', { version: shortVersion(st.currentSha) }), color: 'success' })
+        setTimeout(() => location.reload(), 1200)
+        return
+      }
+      // the same build came back: the updater finished but gave up on a step
+      if (st.lastUpdate && st.lastUpdate.startedAt >= startedAt - 60_000 && !st.lastUpdate.ok) {
+        restarting.value = false
+        toast.add({ title: t('update.lastFailed', { step: st.lastUpdate.step ?? '?' }), color: 'error' })
+        await refreshUpdate()
+        return
+      }
+    } catch { /* still restarting */ }
+  }
+  restarting.value = false
+  toast.add({ title: t('update.restartTimeout'), color: 'error' })
+}
 </script>
 
 <template>
@@ -241,5 +316,78 @@ const neutralColor = computed({
       </form>
     </UCard>
 
+    <UCard class="mt-6">
+      <h2 class="text-base font-semibold mb-1">{{ t('update.title') }}</h2>
+      <p class="text-sm text-muted mb-4">{{ t('update.description') }}</p>
+
+      <div class="space-y-3">
+        <div class="flex flex-wrap items-center gap-2 text-sm font-mono">
+          <span class="text-muted">{{ upd?.branch ?? '?' }} · {{ shortVersion(upd?.currentSha) }}</span>
+          <UIcon name="i-lucide-arrow-right" class="size-3.5 text-dimmed" />
+          <span :class="upd?.updateAvailable ? 'text-warning font-semibold' : 'text-muted'">
+            {{ upd?.latestSha ? shortVersion(upd.latestSha) : '…' }}
+          </span>
+          <UBadge v-if="upd && !upd.currentSha" color="neutral" variant="subtle" :label="t('update.notGit')" />
+          <UBadge v-else-if="upd?.updateAvailable" color="warning" variant="subtle" :label="t('update.updateAvailable')" />
+          <UBadge v-else-if="upd?.error" color="error" variant="subtle" :label="t('update.checkFailed')" />
+          <UBadge v-else-if="upd?.checkedAt" color="success" variant="subtle" :label="t('update.upToDate')" />
+        </div>
+
+        <p class="text-xs text-dimmed">
+          <span v-if="upd?.checkedAt">{{ t('update.checkedAt', { time: fmtTime(upd.checkedAt) }) }}</span>
+          <span v-else>{{ t('update.neverChecked') }}</span>
+          <a
+            v-if="upd?.compareUrl"
+            :href="upd.compareUrl"
+            target="_blank"
+            rel="noopener"
+            class="ml-2 text-primary hover:underline"
+          >{{ t('update.compare') }}</a>
+        </p>
+
+        <p v-if="upd && !upd.currentSha" class="text-xs text-dimmed">{{ t('update.notGit') }}</p>
+        <p v-else-if="upd?.dev" class="text-xs text-dimmed">{{ t('update.devMode') }}</p>
+        <p v-if="failedUpdate" class="text-xs text-error">
+          {{ t('update.lastFailed', { step: failedUpdate.step ?? '?' }) }}
+        </p>
+
+        <div class="flex items-center gap-2 pt-1">
+          <UButton
+            v-if="upd?.currentSha"
+            size="sm"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-refresh-cw"
+            :loading="updateChecking || upd?.checking"
+            :disabled="upd?.applying"
+            @click="checkUpdate"
+          >
+            {{ t('update.check') }}
+          </UButton>
+          <UButton v-if="canApply" size="sm" icon="i-lucide-download" @click="applyOpen = true">
+            {{ t('update.apply') }}
+          </UButton>
+          <span v-if="restarting" class="text-xs text-muted inline-flex items-center gap-1.5">
+            <UIcon name="i-lucide-loader-circle" class="size-3.5 animate-spin" />
+            {{ t('update.restarting') }}
+          </span>
+        </div>
+      </div>
+    </UCard>
+
+    <!-- update confirm: the server pulls, rebuilds and restarts itself -->
+    <UModal v-model:open="applyOpen" :title="t('update.applyTitle')">
+      <template #body>
+        <p class="text-sm">{{ t('update.applyText') }}</p>
+        <div class="flex justify-end gap-2 pt-4">
+          <UButton color="neutral" variant="ghost" @click="applyOpen = false">
+            {{ t('common.cancel') }}
+          </UButton>
+          <UButton @click="runUpdate">
+            {{ t('update.applyConfirm') }}
+          </UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

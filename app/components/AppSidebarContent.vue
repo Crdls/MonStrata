@@ -5,8 +5,11 @@ const emit = defineEmits<{ dismiss: [] }>()
 const route = useRoute()
 const { status, isAdmin, signOut } = useAuth()
 const { connected } = useLive()
+const { status: updateStatus } = useUpdate()
 const authUser = computed(() => (status.value?.authEnabled ? status.value.user : null))
 const { t } = useI18n()
+
+const versionLabel = computed(() => (updateStatus.value ? shortVersion(updateStatus.value.currentSha) : ''))
 
 // the user table is only listed for admins while auth is on
 const nav = computed(() => [
@@ -58,7 +61,7 @@ function isActive (to: string) {
     </nav>
 
     <!-- utilities in one compact row, divider-separated from the nav:
-         live state · theme · source · logout -->
+         live state · version · theme · source · logout -->
     <div class="shrink-0 flex items-center justify-between gap-1 -mx-3 px-3 pt-2 border-t border-default">
       <UTooltip :text="connected ? t('common.liveHint') : t('common.pollHint')">
         <UIcon
@@ -66,6 +69,21 @@ function isActive (to: string) {
           :class="connected ? 'text-success' : 'text-warning'"
           class="size-4 shrink-0"
         />
+      </UTooltip>
+
+      <!-- running build: commit of this checkout, flagged when origin moved on -->
+      <UTooltip
+        :text="updateStatus?.updateAvailable ? t('update.updateAvailable') : `MonStrata ${versionLabel || t('update.unknownVersion')}`"
+      >
+        <NuxtLink
+          to="/settings"
+          class="shrink-0 px-1 rounded inline-flex items-center gap-0.5 text-[11px] font-mono text-dimmed hover:text-default"
+          :aria-label="t('update.title')"
+          @click="emit('dismiss')"
+        >
+          <UIcon v-if="updateStatus?.updateAvailable" name="i-lucide-arrow-up-circle" class="size-3.5 text-warning" />
+          <span>{{ versionLabel }}</span>
+        </NuxtLink>
       </UTooltip>
 
       <!-- ClientOnly + fallback: avoids the stale aria-label hydration

@@ -25,6 +25,9 @@
   tok/s、队列、显存 %、功耗、命中率等）。时间范围和指标会在浏览器中记住（cookie）。
 - **设置** — 轮询间隔和汇总间隔（默认 30 秒）、
   原始数据和小时聚合的保留深度。修改后立即生效。
+- **自更新** — 侧栏显示当前构建的提交，每 6 小时检查一次
+  `origin`，在设置中一键拉取新代码、重新构建并重启服务器
+  （开启验证后仅管理员）。
 - **主题** — 浅色 / 深色 / 跟随系统：侧栏（移动端为抽屉菜单）中快速切换或在设置中选择，
   设置中还可选择强调色和中性色板，保存在浏览器中（localStorage）。
 - **吉祥物** — 长角咧嘴笑的怪物，笑容是一条绿色锯齿状负载曲线：侧栏和
@@ -58,10 +61,17 @@ npm run build
 
 ## 更新
 
-同样的步骤，一个脚本搞定：Linux 运行 `./update.sh`，Windows 运行
-`update.bat`。脚本依次执行 `git pull`、`npm install --omit=dev` 和
-`npm run build`，新克隆后同样适用（此时 pull 什么都不做）。之后重启
-服务器以应用新构建。
+运行中的构建就是一个 git 克隆，因此 MonStrata 知道自己的提交并显示在侧栏中。
+每 6 小时（或点击"立即检查"时）它会询问 `origin` 分支是否有新提交；
+届时设置中会出现"更新并重启"按钮（开启验证后仅管理员）。
+该按钮在后台运行 `scripts/autoupdate.mjs`：等待服务器退出，依次执行
+`git pull --ff-only`、`npm install --omit=dev`、`npm run build`，
+然后重新拉起服务器——新构建响应后页面会自动刷新。整个过程记录在
+`data/update.log`；若某一步失败（例如本地改动阻碍了 pull），
+旧构建会重新拉起，设置页会显示失败原因。开发模式下不会应用更新。
+
+Linux 运行 `./update.sh`，Windows 运行 `update.bat`，手动执行同样的步骤，
+新克隆后同样适用（此时 pull 什么都不做）。之后重启服务器以应用新构建。
 
 ## 运行
 
@@ -236,12 +246,14 @@ server/
   middleware/   auth.ts — /api 的会话关卡（由 config.json 开启）
   utils/        Prometheus 解析器、SQLite、指标目录、采集器、汇总、认证原语、
                 权限规则、GitLab OAuth 辅助、gateway/（路由、优先级队列、会话亲和、代理）
-  plugins/      后台循环（scrape、rollups、gateway）
+  plugins/      后台循环（scrape、rollups、gateway、更新检查）
   api/          servers CRUD、live、range、heatmap、settings、auth、users、
-                gateway（状态、客户端、轮换、IP）
+                gateway（状态、客户端、轮换、IP）、update（status/check/apply）
   routes/       _ws.ts WebSocket 端点、v1/[...].ts 网关代理
 scripts/        reset-password.mjs — 密码恢复（无需邮箱）
-test/           基于真实 /metrics 固定数据的解析器测试 + 认证/配置/网关测试
+                autoupdate.mjs — "更新"按钮执行：pull + install + build + 重启
+                                 （日志：data/update.log）
+test/           基于真实 /metrics 固定数据的解析器测试 + 认证/配置/网关/更新测试
 update.sh|.bat  一键安装/更新：pull + install --omit=dev + build
 ```
 
@@ -252,6 +264,7 @@ update.sh|.bat  一键安装/更新：pull + install --omit=dev + build
 - `GET /api/range?serverId&metric&from&to` — 指标历史（raw/hourly/daily — 数据源自动选择）
 - `GET /api/heatmap?metric&period=1h|3h|12h|24h|7d|30d|1y` — 服务器 × 时间桶矩阵
 - `GET|PUT /api/settings`（`PUT`：开启验证后仅管理员）
+- `GET /api/update/status` — 当前提交与更新可用性；`POST /api/update/check` — 立即重新检查；`POST /api/update/apply` — 通过 `scripts/autoupdate.mjs` 拉取、构建并重启（开启验证后仅管理员；开发模式下禁用）
 - `/api/auth/status|setup|login|logout|password` — 身份验证（公开：status、setup、login、logout）
 - `GET /api/auth/gitlab/start` — 重定向到 GitLab；`GET /api/auth/gitlab/callback` — OAuth callback：请把这一 URL 原样注册为 GitLab 应用的 redirect URI
 - `GET /api/users`、`PATCH|DELETE /api/users/:id` — 用户管理（仅管理员；PATCH 接受 `role`、`disabled`、`password`）
@@ -267,6 +280,7 @@ node test/parse.test.mjs
 node test/auth.test.mjs
 node test/config.test.mjs
 node test/gateway.test.mjs
+node test/update.test.mjs
 ```
 
 ## 备注
