@@ -9,6 +9,8 @@ export interface LastUpdateResult {
 export interface UpdateStatus {
   /** commit of the running checkout; null when it is not a git checkout */
   currentSha: string | null
+  /** commit time of the running checkout (ms) for the version label */
+  commitTs: number | null
   branch: string | null
   latestSha: string | null
   updateAvailable: boolean

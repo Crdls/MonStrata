@@ -49,6 +49,8 @@ export interface LastUpdateResult {
 export interface UpdateRuntime {
   /** commit of the running checkout; null when git/the checkout is missing */
   currentSha: string | null
+  /** commit time of the running checkout (ms) for the version label */
+  commitTs: number | null
   /** checked-out branch (null while detached or without git) */
   branch: string | null
   /** https URL of the origin remote; null when it is not GitHub */
@@ -118,6 +120,7 @@ export function runtime (): Runtime {
   if (!rt.update) {
     rt.update = {
       currentSha: null,
+      commitTs: null,
       branch: null,
       repoUrl: null,
       latestSha: null,

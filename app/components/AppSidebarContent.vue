@@ -10,6 +10,7 @@ const authUser = computed(() => (status.value?.authEnabled ? status.value.user :
 const { t } = useI18n()
 
 const versionLabel = computed(() => (updateStatus.value ? shortVersion(updateStatus.value.currentSha) : ''))
+const versionDate = computed(() => (updateStatus.value?.commitTs ? new Date(updateStatus.value.commitTs).toLocaleDateString() : ''))
 
 // the user table is only listed for admins while auth is on
 const nav = computed(() => [
@@ -60,71 +61,65 @@ function isActive (to: string) {
       </NuxtLink>
     </nav>
 
-    <!-- utilities in one compact row, divider-separated from the nav:
-         live state · version · theme · source · logout -->
-    <div class="shrink-0 flex items-center justify-between gap-1 -mx-3 px-3 pt-2 border-t border-default">
-      <UTooltip :text="connected ? t('common.liveHint') : t('common.pollHint')">
-        <UIcon
-          :name="connected ? 'i-lucide-radio' : 'i-lucide-wifi-off'"
-          :class="connected ? 'text-success' : 'text-warning'"
-          class="size-4 shrink-0"
-        />
-      </UTooltip>
+    <!-- footer group: build info sits above the divider as plain text,
+         the utility buttons (live state · theme · source · logout) below it -->
+    <div class="shrink-0">
+      <div v-if="versionLabel" class="px-2 pb-1.5 flex items-center gap-1 text-[11px] font-mono text-dimmed">
+        <span>{{ versionLabel }}{{ versionDate ? ` · ${versionDate}` : '' }}</span>
+        <UTooltip v-if="updateStatus?.updateAvailable" :text="t('update.updateAvailable')">
+          <UIcon name="i-lucide-arrow-up-circle" class="size-3 text-warning" />
+        </UTooltip>
+      </div>
 
-      <!-- running build: commit of this checkout, flagged when origin moved on -->
-      <UTooltip
-        :text="updateStatus?.updateAvailable ? t('update.updateAvailable') : `MonStrata ${versionLabel || t('update.unknownVersion')}`"
-      >
-        <NuxtLink
-          to="/settings"
-          class="shrink-0 px-1 rounded inline-flex items-center gap-0.5 text-[11px] font-mono text-dimmed hover:text-default"
-          :aria-label="t('update.title')"
-          @click="emit('dismiss')"
-        >
-          <UIcon v-if="updateStatus?.updateAvailable" name="i-lucide-arrow-up-circle" class="size-3.5 text-warning" />
-          <span>{{ versionLabel }}</span>
-        </NuxtLink>
-      </UTooltip>
+      <div class="flex items-center justify-between gap-1 -mx-3 px-3 pt-2 border-t border-default">
+        <UTooltip :text="connected ? t('common.liveHint') : t('common.pollHint')">
+          <UIcon
+            :name="connected ? 'i-lucide-radio' : 'i-lucide-wifi-off'"
+            :class="connected ? 'text-success' : 'text-warning'"
+            class="size-4 shrink-0"
+          />
+        </UTooltip>
 
-      <!-- ClientOnly + fallback: avoids the stale aria-label hydration
-           mismatch when the system theme differs from the SSR default -->
-      <ClientOnly>
-        <UColorModeButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-        />
-        <template #fallback>
-          <div class="size-6" />
-        </template>
-      </ClientOnly>
+        <!-- ClientOnly + fallback: avoids the stale aria-label hydration
+             mismatch when the system theme differs from the SSR default -->
+        <ClientOnly>
+          <UColorModeButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+          />
+          <template #fallback>
+            <div class="size-6" />
+          </template>
+        </ClientOnly>
 
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-github"
-        :aria-label="t('footer.source')"
-        to="https://github.com/Crdls/MonStrata"
-        target="_blank"
-        rel="noopener"
-        class="shrink-0"
-      />
-
-      <UTooltip
-        v-if="authUser"
-        :text="t('auth.logoutAs', { username: authUser.username })"
-      >
         <UButton
           size="xs"
           color="neutral"
           variant="ghost"
-          icon="i-lucide-log-out"
-          :aria-label="t('auth.logout')"
+          icon="i-lucide-github"
+          :aria-label="t('footer.source')"
+          to="https://github.com/Crdls/MonStrata"
+          target="_blank"
+          rel="noopener"
           class="shrink-0"
-          @click="signOut()"
         />
-      </UTooltip>
+
+        <UTooltip
+          v-if="authUser"
+          :text="t('auth.logoutAs', { username: authUser.username })"
+        >
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-log-out"
+            :aria-label="t('auth.logout')"
+            class="shrink-0"
+            @click="signOut()"
+          />
+        </UTooltip>
+      </div>
     </div>
   </div>
 </template>

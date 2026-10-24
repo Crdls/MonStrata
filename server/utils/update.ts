@@ -106,8 +106,11 @@ async function readLocalVersion (st: UpdateRuntime): Promise<void> {
   st.currentSha = isSha(head) ? head : null
   if (!st.currentSha) {
     st.branch = null
+    st.commitTs = null
     return
   }
+  const ts = await git('log', '-1', '--format=%ct')
+  st.commitTs = ts && /^\d+$/.test(ts) ? Number(ts) * 1000 : null
   const branch = await git('rev-parse', '--abbrev-ref', 'HEAD')
   // detached HEAD reports "HEAD" itself — there is no branch to compare then
   st.branch = branch && branch !== 'HEAD' ? branch : null
@@ -200,6 +203,7 @@ export function updateStatusPayload () {
   const st = updateState()
   return {
     currentSha: st.currentSha,
+    commitTs: st.commitTs,
     branch: st.branch,
     latestSha: st.latestSha,
     updateAvailable: updateAvailable(st.currentSha, st.latestSha),
