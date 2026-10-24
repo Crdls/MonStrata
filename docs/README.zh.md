@@ -37,6 +37,11 @@
   账户存储在 SQLite 中，密码使用 scrypt 哈希，登录有效期 30 天并在使用时
   自动续期，角色分为 `admin` 和 `user`。开启验证且尚无任何用户时，应用会打开创建首个管理员账户的界面。
   也可以通过局域网内的 GitLab 服务器登录（OAuth2，见下文「身份验证」）。
+- **API 网关（可选）** — 一个 OpenAI 兼容端点（`/v1`）在所有引擎间负载均衡：
+  按应用分配的 API 令牌（`msk_…`）、带 aging 的优先级队列、会话感知路由
+  （同一会话始终落在持有其 KV 前缀缓存的引擎上）、按服务器的网关模式
+  （路由 / 排空 / 仅统计）以及来源 IP 记录。默认关闭，
+  在 `config.json` 中开启 `gateway.enabled` — 见下文「网关（负载均衡器）」。
 
 ## 安装
 
@@ -163,6 +168,50 @@ node scripts/reset-password.mjs <用户名或 id> [新密码]
 
 重置会退出该用户的所有会话。
 
+## 网关（负载均衡器）
+
+MonStrata 还可以作为所有应用调用引擎的唯一入口——在所有引擎前面的一个
+OpenAI 兼容端点：
+
+```
+POST http://<monstrata-主机>:3003/v1/chat/completions
+Authorization: Bearer msk_…
+```
+
+发往 `/v1` 的一切都会被透明转发（chat completions、models 及其他兼容路由），
+包括流式响应。默认关闭——在 `config.json` 中开启：
+
+```json
+"gateway": { "enabled": true }
+```
+
+- **客户端** — 「客户端」页面（开启验证后仅管理员）管理允许调用网关的
+  API 令牌：自动生成 `msk_…` 密钥（只显示一次，仅存储其哈希）或使用
+  自定义令牌；令牌可停用、轮换，带有优先级和可选的调试标记，后者会给响应
+  加上 `X-MonStrata-Server`、`X-MonStrata-Queue-Wait-Ms`、
+  `X-MonStrata-Session` 头。每个客户端都有请求计数和来源 IP 记录；
+  token 用量在客户端索取 `usage` 数据块（如 `stream_options.include_usage`）
+  时从引擎响应统计，否则按字节数/4 估算——是统计，不是账单。
+- **会话亲和** — 一个会话会继续由持有其 KV 前缀缓存的引擎服务：客户端发送
+  `X-Session-Id` 头时以它为准，否则以对话开头（system + 首条用户消息）的哈希
+  作为映射键；空闲超过 `sessionIdleMin`（60 分钟）的会话可能落到其他引擎。
+- **最小负载路由** — 新会话落到负载最小的引擎，每个引擎有并发上限：
+  服务器页面的「网关并发」字段，否则用引擎自身批处理槽位
+  （`strata:live_slots`），否则 `defaultCapacity`（32）。当引擎内部队列
+  堆积、KV cache 超过 95%，或刚有实时请求在其上失败（`ejectionS`，30 秒）时，
+  该服务器会暂时不接新请求。
+- **优先级队列** — 所有引擎满载时请求进入严格优先级通道（按客户端的
+  高 / 普通 / 低），同通道内按客户端公平轮转；等待会逐步提升请求
+  （低 → 普通经 30 秒，再 → 高经 5 分钟），因此不会饿死。等待超过
+  `queueTimeoutS`（60 秒）或触及队列上限的请求会收到带 `Retry-After` 的
+  OpenAI 风格 `429`。队列存在于内存中——重启 MonStrata 会丢弃排队中的请求
+  （进行中的会正常完成）。
+- **从网关注摘除服务器** — 服务器页面的网关模式：**路由**（默认）、
+  **排空**（只完成进行中的请求）、**统计**（仅监控，网关不再转发）。
+- `config.json` 的 `gateway` 段还可调整 `queueTimeoutS`、`queueMax`（200）、
+  `queueMaxPerClient`（20）、`sessionIdleMin`、`defaultCapacity`、
+  `ejectionS`——全部有合理的默认值。
+
 ## 数据存储
 
 | 层级 | 粒度 | 默认保留期 |
@@ -179,19 +228,20 @@ node scripts/reset-password.mjs <用户名或 id> [新密码]
 
 ```
 app/            Vue 3 + Nuxt UI 前端
-  pages/        仪表盘、服务器详情、热力图、服务器列表、用户、设置、登录
+  pages/        仪表盘、服务器详情、热力图、服务器列表、客户端、用户、设置、登录
   components/   ServerCard、MetricChart (uPlot)、LoadHeatmap 等
   plugins/live.ts  共享状态 + WebSocket 客户端
 i18n/locales/   语言词典：en、ru、de、es、fr、zh
 server/
   middleware/   auth.ts — /api 的会话关卡（由 config.json 开启）
   utils/        Prometheus 解析器、SQLite、指标目录、采集器、汇总、认证原语、
-                权限规则、GitLab OAuth 辅助
-  plugins/      后台循环（scrape、rollups）
-  api/          servers CRUD、live、range、heatmap、settings、auth、users
-  routes/_ws.ts WebSocket 端点
+                权限规则、GitLab OAuth 辅助、gateway/（路由、优先级队列、会话亲和、代理）
+  plugins/      后台循环（scrape、rollups、gateway）
+  api/          servers CRUD、live、range、heatmap、settings、auth、users、
+                gateway（状态、客户端、轮换、IP）
+  routes/       _ws.ts WebSocket 端点、v1/[...].ts 网关代理
 scripts/        reset-password.mjs — 密码恢复（无需邮箱）
-test/           基于真实 /metrics 固定数据的解析器测试 + 认证测试
+test/           基于真实 /metrics 固定数据的解析器测试 + 认证/配置/网关测试
 update.sh|.bat  一键安装/更新：pull + install --omit=dev + build
 ```
 
@@ -205,6 +255,9 @@ update.sh|.bat  一键安装/更新：pull + install --omit=dev + build
 - `/api/auth/status|setup|login|logout|password` — 身份验证（公开：status、setup、login、logout）
 - `GET /api/auth/gitlab/start` — 重定向到 GitLab；`GET /api/auth/gitlab/callback` — OAuth callback：请把这一 URL 原样注册为 GitLab 应用的 redirect URI
 - `GET /api/users`、`PATCH|DELETE /api/users/:id` — 用户管理（仅管理员；PATCH 接受 `role`、`disabled`、`password`）
+- `GET /api/gateway/status` — 队列通道与各服务器的网关负载（开启验证后仅管理员）
+- `GET|POST /api/gateway/clients`、`PATCH|DELETE /api/gateway/clients/:id`、`POST /api/gateway/clients/:id/rotate`、`GET /api/gateway/clients/:id/ips` — 网关 API 令牌（开启验证后仅管理员；POST/rotate 只返回一次原始令牌）
+- `/v1/**` — OpenAI 兼容网关，用客户端自己的令牌认证（`Authorization: Bearer msk_…`），不用会话 cookie — 见上文「网关（负载均衡器）」
 - `WS /_ws` — 推送快照
 
 ## 测试
@@ -213,6 +266,7 @@ update.sh|.bat  一键安装/更新：pull + install --omit=dev + build
 node test/parse.test.mjs
 node test/auth.test.mjs
 node test/config.test.mjs
+node test/gateway.test.mjs
 ```
 
 ## 备注
@@ -229,6 +283,8 @@ node test/config.test.mjs
   会返回 JSON — 采集器始终发送该请求头。
 - 身份验证默认关闭（本服务面向受信任的本地网络）；开启后，除认证引导接口外，
   所有 `/api` 和 `/_ws` 都需要有效的会话 cookie。
+- `/v1` 网关默认同样关闭，并且有意*不*用会话 cookie 把关——客户端在那里
+  用自己的 `msk_…` API 令牌认证。
 
 ## 致谢
 

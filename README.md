@@ -44,6 +44,13 @@ with selectable period.
   opens a first-run screen to create the admin account. Users can also sign
   in through a GitLab server on the LAN (OAuth2, see
   [Authentication](#authentication)).
+- **API gateway (optional)** — one OpenAI-compatible endpoint (`/v1`) that
+  load-balances across all your engines: per-app API tokens (`msk_…`),
+  a priority queue with aging, session-aware routing (a chat keeps hitting
+  the engine that holds its KV prefix cache), per-server routing modes
+  (route / drain / stats-only) and source-IP tracking. Off by default,
+  enable with `gateway.enabled` in `config.json` — see
+  [Gateway](#gateway-load-balancer).
 
 ## Installation
 
@@ -184,6 +191,58 @@ node scripts/reset-password.mjs <username or id> [new password]
 
 The reset signs all sessions of that user out.
 
+## Gateway (load balancer)
+
+MonStrata can also be the single entry point for applications calling the
+engines — one OpenAI-compatible endpoint in front of all of them:
+
+```
+POST http://<monstrata-host>:3003/v1/chat/completions
+Authorization: Bearer msk_…
+```
+
+Everything under `/v1` is forwarded transparently (chat completions, models,
+assorted compatible routes), streaming included. Off by default — turn it on
+in `config.json`:
+
+```json
+"gateway": { "enabled": true }
+```
+
+- **Clients** — the **Clients** page (admins only when auth is on) manages
+  the API tokens that may call the gateway: an auto-generated `msk_…` key
+  (shown exactly once, only its hash is stored) or your own token; tokens can
+  be disabled and rotated, carry a priority and an optional debug flag that
+  adds `X-MonStrata-Server`, `X-MonStrata-Queue-Wait-Ms` and
+  `X-MonStrata-Session` response headers. Each client gets request counters
+  and a source-IP history; token usage is tallied from the engine's `usage`
+  chunk when the client asks for it (e.g. `stream_options.include_usage`),
+  otherwise it is a bytes/4 estimate — stats, not billing.
+- **Session affinity** — a chat sticks to the engine that holds its KV
+  prefix cache: the `X-Session-Id` header decides when the client sends it,
+  otherwise the hash of the conversation opening (system + first user
+  message) keys the mapping; chats idle for longer than `sessionIdleMin`
+  (60 min) may land elsewhere.
+- **Least-loaded routing** — a new chat goes to the least loaded engine,
+  each capped by concurrency: the per-server `gateway capacity` on the
+  Servers page, else the engine's own batch slots (`strata:live_slots`),
+  else `defaultCapacity` (32). A server temporarily stops taking new work
+  while the engine reports a waiting queue, its KV cache above 95%, or right
+  after a live request failed against it (`ejectionS`, 30 s).
+- **Priority queue** — when every engine is at capacity requests wait in the
+  strict-priority lanes (high / normal / low per client) with round-robin
+  fairness between clients of a lane; waiting gradually promotes a request
+  (low → normal after 30 s, then → high after 5 min more) so nobody starves.
+  A request that waited `queueTimeoutS` (60 s) or hit the queue caps gets an
+  OpenAI-style `429` with `Retry-After`. The queue lives in memory — a
+  MonStrata restart drops waiting requests (in-flight ones finish).
+- **Detaching a server** — per-server gateway mode on the Servers page:
+  **Route** (default), **Drain** (only finish in-flight requests) or
+  **Stats** (monitoring only, the gateway never forwards to it).
+- The `gateway` section of `config.json` also accepts `queueTimeoutS`,
+  `queueMax` (200), `queueMaxPerClient` (20), `sessionIdleMin`,
+  `defaultCapacity` and `ejectionS` — everything has a sane default.
+
 ## Data storage
 
 | tier | resolution | default retention |
@@ -200,19 +259,21 @@ TTFT / ITL / E2E, engine and memory busy percentages.
 
 ```
 app/            Vue 3 + Nuxt UI frontend
-  pages/        dashboard, server, heatmap, servers, users, settings, login
+  pages/        dashboard, server, heatmap, servers, clients, users, settings, login
   components/   ServerCard, MetricChart (uPlot), LoadHeatmap, ...
   plugins/live.ts  shared state + WebSocket client
 i18n/locales/   dictionaries: en, ru, de, es, fr, zh
 server/
   middleware/   auth.ts - session gate for /api (opt-in via config.json)
   utils/        Prometheus parser, SQLite, metric catalog, scraper, rollups,
-                auth primitives, permission rules, GitLab OAuth helpers
-  plugins/      background loops (scrape, rollups)
-  api/          servers CRUD, live, range, heatmap, settings, auth, users
-  routes/_ws.ts WebSocket endpoint
+                auth primitives, permission rules, GitLab OAuth helpers,
+                gateway/ (routing, priority queue, session affinity, proxy)
+  plugins/      background loops (scrape, rollups, gateway)
+  api/          servers CRUD, live, range, heatmap, settings, auth, users,
+                gateway (status, clients, rotate, IPs)
+  routes/       _ws.ts WebSocket endpoint, v1/[...].ts gateway proxy
 scripts/        reset-password.mjs - lost password recovery (no email)
-test/           parser test on real /metrics fixtures + auth helper tests
+test/           parser test on real /metrics fixtures + auth/config/gateway tests
 update.sh|.bat  one-shot install/update: pull + install --omit=dev + build
 ```
 
@@ -226,6 +287,9 @@ update.sh|.bat  one-shot install/update: pull + install --omit=dev + build
 - `/api/auth/status|setup|login|logout|password` — auth (public: status, setup, login, logout)
 - `GET /api/auth/gitlab/start` — redirect to GitLab; `GET /api/auth/gitlab/callback` — the OAuth callback endpoint: register exactly this URL as the redirect URI in the GitLab application
 - `GET /api/users`, `PATCH|DELETE /api/users/:id` — user management (admins only; PATCH takes `role`, `disabled`, `password`)
+- `GET /api/gateway/status` — queue lanes and per-server gateway load (admin only when auth is on)
+- `GET|POST /api/gateway/clients`, `PATCH|DELETE /api/gateway/clients/:id`, `POST /api/gateway/clients/:id/rotate`, `GET /api/gateway/clients/:id/ips` — gateway API tokens (admins only when auth is on; POST/rotate return the raw token once)
+- `/v1/**` — OpenAI-compatible gateway, authenticated by client tokens (`Authorization: Bearer msk_…`), not by the session cookie — see [Gateway](#gateway-load-balancer)
 - `WS /_ws` — push snapshots
 
 ## Tests
@@ -234,6 +298,7 @@ update.sh|.bat  one-shot install/update: pull + install --omit=dev + build
 node test/parse.test.mjs
 node test/auth.test.mjs
 node test/config.test.mjs
+node test/gateway.test.mjs
 ```
 
 ## Notes
@@ -252,6 +317,9 @@ node test/config.test.mjs
 - Authentication is off by default (the service is meant for a trusted local
   network); when enabled, all `/api` routes except the auth bootstrap ones
   and `/_ws` require a valid session cookie.
+- The `/v1` gateway is off by default too, and it is deliberately *not*
+  gated by the session cookie — clients authenticate with their own
+  `msk_…` API tokens there.
 
 ## Acknowledgments
 

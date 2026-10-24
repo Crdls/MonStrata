@@ -6,7 +6,7 @@ MonStrata: Nuxt 4 monitor for Strata inference engines. Scrapes Prometheus `/met
 
 - `npm run dev` — dev server on http://localhost:3003 (port set via `devServer.port` in `nuxt.config.ts`).
 - The dev server is usually already running by the user on :3003 — check `http://localhost:3003` before starting another one; don't kill or restart it without being asked.
-- `node test/parse.test.mjs`, `node test/auth.test.mjs` and `node test/config.test.mjs` — the entire test suite. Bare Node scripts, no test framework; they import `.ts` directly, so type-stripping-capable Node is required (README: Node ≥ 22.22 or ≥ 24.15; older Node 24 prints EBADENGINE).
+- `node test/parse.test.mjs`, `node test/auth.test.mjs`, `node test/config.test.mjs` and `node test/gateway.test.mjs` — the entire test suite. Bare Node scripts, no test framework; they import `.ts` directly, so type-stripping-capable Node is required (README: Node ≥ 22.22 or ≥ 24.15; older Node 24 prints EBADENGINE).
 - `npm run build && node .output/server/index.mjs` — production run. `npm run build` is the only whole-project validation: there is **no** lint, formatter, typecheck script, or CI. Match existing style (2 spaces, no semicolons, single quotes, `foo (args)` space before parens).
 - Test fixtures are real `/metrics` captures in `test/fixtures/`.
 
@@ -27,6 +27,13 @@ MonStrata: Nuxt 4 monitor for Strata inference engines. Scrapes Prometheus `/met
 - Raw `vllm:*` / `strata:*` series are stored verbatim; `derived:*` series are computed by the scraper (`server/utils/scrape.ts`) from counter deltas using `COUNTER_RATES` / `HIST_WINDOW_AVG` / `BUSY_PCT`. Define new derived metrics there, not in API routes or the frontend.
 - Label sets are stored as `normalizeLabels()` strings (sorted `k=v`, comma-joined) — always normalize before keying or comparing.
 - Scraping `/metrics` must send `Accept: text/plain`; Strata returns JSON otherwise.
+
+## Gateway (/v1 load-balancing proxy)
+
+- `server/routes/v1/[...].ts` is the catch-all; it bypasses the auth middleware (which only gates `/api/*`) and authenticates clients by `msk_…` bearer tokens — sha256 in the `gateway_clients` table, raw token shown once at create/rotate (`server/utils/gateway/tokens.ts`, hash reuses `hashToken` from credentials.ts; errors are OpenAI-shaped JSON).
+- Pure, bare-Node-testable core in `server/utils/gateway/`: `types.ts` (ServerLoad + admissibility), `router.ts` (affinity → least-loaded), `queue.ts` (strict priority + aging 30 s/5 min, per-client round-robin), `session.ts` (`X-Session-Id` header → hash of the conversation opening → no key), `proxy.ts` (fetch forwarding, SSE `usage` sniffing). `state.ts` wires them to the DB and to `globalThis.__monstrata` via `gatewayRuntime()` (inflight counters, queues, affinity cache, IP/usage aggregators); the 5 s maintenance loop is `server/plugins/gateway.ts`.
+- Admission control is gateway-owned: the gateway's own inflight counter is authoritative (capacity: `servers.gateway_capacity` → `strata:live_slots` → `gateway.defaultCapacity`), and a server with scrape-reported `waiting > 0`, KV usage ≥ 95% or a recent live error (`ejectionS`) temporarily takes no new work — this keeps the upstream engine's own FIFO queue empty so the gateway priorities mean something.
+- `gateway.enabled` in `config.json` is false by default and must stay that way; `servers.gateway_mode` (`on | drain | off`) and `gateway_capacity` are edited via PATCH `/api/servers/:id` and the Servers page; client CRUD + status live under `/api/gateway/*` (admin-only while auth is on) with the `/clients` page. Restarting MonStrata drops in-memory queues (documented in README).
 
 ## i18n
 
