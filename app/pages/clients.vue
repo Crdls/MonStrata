@@ -23,12 +23,26 @@ interface GatewayStatus {
 
 interface ClientIpRow { ip: string, first_seen: number, last_seen: number, hits: number }
 
+interface ServerOption { id: number, name: string }
+
 const { data: clients, refresh } = useFetch<GatewayClientView[]>('/api/gateway/clients', {
   // forward cookies on the SSR-side call so the auth middleware lets it through
   headers: useRequestHeaders(['cookie'])
 })
+const { data: serverOptions } = useFetch<ServerOption[]>('/api/servers', {
+  headers: useRequestHeaders(['cookie'])
+})
 const toast = useToast()
 const { t } = useI18n()
+
+// ---------- server access selection (add + edit modals) ----------
+function allServerIds (): number[] {
+  return (serverOptions.value ?? []).map(s => s.id)
+}
+
+function toggleIn (list: { value: number[] }, id: number, on: boolean): void {
+  list.value = on ? [...new Set([...list.value, id])] : list.value.filter(x => x !== id)
+}
 
 function fmtTime (ts: number | null): string {
   return ts ? new Date(ts).toLocaleString() : '—'
@@ -73,6 +87,7 @@ async function copyToken () {
 // ---------- create ----------
 const addOpen = ref(false)
 const addForm = reactive({ name: '', priority: 'normal', debug: false, token: '' })
+const addServers = ref<number[]>([])
 const saving = ref(false)
 const priorityItems = computed(() => [
   { value: 'high', label: t('clients.prioHigh') },
@@ -85,6 +100,7 @@ function openAdd () {
   addForm.priority = 'normal'
   addForm.debug = false
   addForm.token = ''
+  addServers.value = allServerIds()
   addOpen.value = true
 }
 
@@ -97,6 +113,8 @@ async function createClient () {
         name: addForm.name,
         priority: addForm.priority,
         debug: addForm.debug,
+        serversAll: addServers.value.length === allServerIds().length,
+        serverIds: addServers.value,
         ...(addForm.token.trim() ? { token: addForm.token.trim() } : {})
       }
     })
@@ -118,6 +136,7 @@ async function createClient () {
 const editOpen = ref(false)
 const editing = ref<GatewayClientView | null>(null)
 const editForm = reactive({ name: '', priority: 'normal', debug: false, enabled: true })
+const editServers = ref<number[]>([])
 
 function openEdit (client: GatewayClientView) {
   editing.value = client
@@ -125,6 +144,8 @@ function openEdit (client: GatewayClientView) {
   editForm.priority = client.priority
   editForm.debug = client.debug
   editForm.enabled = client.enabled
+  const known = allServerIds()
+  editServers.value = client.serversAll ? known : client.serverIds.filter(id => known.includes(id))
   editOpen.value = true
 }
 
@@ -132,7 +153,14 @@ async function saveEdit () {
   if (!editing.value) return
   saving.value = true
   try {
-    await $fetch(`/api/gateway/clients/${editing.value.id}`, { method: 'PATCH', body: { ...editForm } })
+    await $fetch(`/api/gateway/clients/${editing.value.id}`, {
+      method: 'PATCH',
+      body: {
+        ...editForm,
+        serversAll: editServers.value.length === allServerIds().length,
+        serverIds: editServers.value
+      }
+    })
     editOpen.value = false
     toast.add({ title: t('clients.toastSaved'), color: 'success' })
     await refresh()
@@ -302,6 +330,9 @@ function priorityColor (p: string): 'error' | 'primary' | 'neutral' {
             <td class="py-2.5 pr-3">
               <div class="font-medium">{{ client.name }}</div>
               <div class="text-xs text-dimmed font-mono">{{ client.tokenHint }}</div>
+              <div class="text-xs text-dimmed">
+                {{ client.serversAll ? t('clients.serversAll') : t('clients.serversCount', { n: client.serverIds.length, total: (serverOptions ?? []).length }) }}
+              </div>
             </td>
             <td class="py-2.5 pr-3">
               <UBadge :color="priorityColor(client.priority)" variant="subtle" size="sm">
@@ -369,6 +400,23 @@ function priorityColor (p: string): 'error' | 'primary' | 'neutral' {
           <UFormField :label="t('clients.priority')" :help="t('clients.priorityHelp')">
             <USelect v-model="addForm.priority" :items="priorityItems" class="w-40" />
           </UFormField>
+          <UFormField :label="t('clients.servers')" :help="t('clients.serversHelp')">
+            <div class="flex items-center gap-2 mb-1.5">
+              <UButton size="xs" color="neutral" variant="outline" @click="addServers = allServerIds()">
+                {{ t('common.selectAll') }}
+              </UButton>
+              <UButton size="xs" color="neutral" variant="outline" @click="addServers = []">
+                {{ t('common.selectNone') }}
+              </UButton>
+            </div>
+            <div v-if="!serverOptions?.length" class="text-sm text-muted">{{ t('clients.serversEmpty') }}</div>
+            <div v-else class="max-h-40 overflow-y-auto rounded-md border border-default divide-y divide-default">
+              <label v-for="s in serverOptions" :key="s.id" class="flex items-center gap-2 px-2.5 py-1.5 text-sm cursor-pointer hover:bg-elevated/50">
+                <UCheckbox :model-value="addServers.includes(s.id)" @update:model-value="toggleIn(addServers, s.id, $event as boolean)" />
+                <span class="truncate">{{ s.name }}</span>
+              </label>
+            </div>
+          </UFormField>
           <UFormField :label="t('clients.debug')" :help="t('clients.debugHelp')">
             <USwitch v-model="addForm.debug" size="sm" />
           </UFormField>
@@ -396,6 +444,23 @@ function priorityColor (p: string): 'error' | 'primary' | 'neutral' {
           </UFormField>
           <UFormField :label="t('clients.priority')" :help="t('clients.priorityHelp')">
             <USelect v-model="editForm.priority" :items="priorityItems" class="w-40" />
+          </UFormField>
+          <UFormField :label="t('clients.servers')" :help="t('clients.serversHelp')">
+            <div class="flex items-center gap-2 mb-1.5">
+              <UButton size="xs" color="neutral" variant="outline" @click="editServers = allServerIds()">
+                {{ t('common.selectAll') }}
+              </UButton>
+              <UButton size="xs" color="neutral" variant="outline" @click="editServers = []">
+                {{ t('common.selectNone') }}
+              </UButton>
+            </div>
+            <div v-if="!serverOptions?.length" class="text-sm text-muted">{{ t('clients.serversEmpty') }}</div>
+            <div v-else class="max-h-40 overflow-y-auto rounded-md border border-default divide-y divide-default">
+              <label v-for="s in serverOptions" :key="s.id" class="flex items-center gap-2 px-2.5 py-1.5 text-sm cursor-pointer hover:bg-elevated/50">
+                <UCheckbox :model-value="editServers.includes(s.id)" @update:model-value="toggleIn(editServers, s.id, $event as boolean)" />
+                <span class="truncate">{{ s.name }}</span>
+              </label>
+            </div>
           </UFormField>
           <UFormField :label="t('clients.debug')" :help="t('clients.debugHelp')">
             <USwitch v-model="editForm.debug" size="sm" />

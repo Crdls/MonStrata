@@ -13,6 +13,9 @@ export interface GatewayClientView {
   priority: string
   debug: boolean
   enabled: boolean
+  /** true = every gateway server, false = only the ids listed in serverIds */
+  serversAll: boolean
+  serverIds: number[]
   createdAt: number
   requestsTotal: number
   errorsTotal: number
@@ -20,7 +23,7 @@ export interface GatewayClientView {
   requestsToday: number
 }
 
-export function clientView (c: GatewayClientRowWithStats): GatewayClientView {
+export function clientView (c: GatewayClientRowWithStats, serverIds: number[]): GatewayClientView {
   return {
     id: c.id,
     name: c.name,
@@ -28,6 +31,8 @@ export function clientView (c: GatewayClientRowWithStats): GatewayClientView {
     priority: c.priority,
     debug: c.debug === 1,
     enabled: c.enabled === 1,
+    serversAll: c.servers_all === 1,
+    serverIds,
     createdAt: c.created_at,
     requestsTotal: c.requests_total,
     errorsTotal: c.errors_total,
@@ -36,7 +41,7 @@ export function clientView (c: GatewayClientRowWithStats): GatewayClientView {
   }
 }
 
-export function clientViewPlain (c: GatewayClientRow): Omit<GatewayClientView, 'requestsTotal' | 'errorsTotal' | 'tokensTotal' | 'requestsToday'> {
+export function clientViewPlain (c: GatewayClientRow, serverIds: number[]): Omit<GatewayClientView, 'requestsTotal' | 'errorsTotal' | 'tokensTotal' | 'requestsToday'> {
   return {
     id: c.id,
     name: c.name,
@@ -44,6 +49,8 @@ export function clientViewPlain (c: GatewayClientRow): Omit<GatewayClientView, '
     priority: c.priority,
     debug: c.debug === 1,
     enabled: c.enabled === 1,
+    serversAll: c.servers_all === 1,
+    serverIds,
     createdAt: c.created_at
   }
 }

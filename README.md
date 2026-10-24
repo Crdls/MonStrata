@@ -232,6 +232,13 @@ in `config.json`:
   and a source-IP history; token usage is tallied from the engine's `usage`
   chunk when the client asks for it (e.g. `stream_options.include_usage`),
   otherwise it is a bytes/4 estimate — stats, not billing.
+- **Per-client server access** — each client can be limited to a set of
+  engines: the Clients page picks the servers reachable by a client, the
+  Servers page picks which clients a server is available to (both with
+  select-all / select-none buttons). A new client reaches every server; it
+  also keeps reaching servers added later until some are unchecked.
+  Unchecking an unrestricted client on the Servers page limits it to the
+  other current servers.
 - **Session affinity** — a chat sticks to the engine that holds its KV
   prefix cache: the `X-Session-Id` header decides when the client sends it,
   otherwise the hash of the conversation opening (system + first user
@@ -289,7 +296,7 @@ server/
 scripts/        reset-password.mjs - lost password recovery (no email)
                 autoupdate.mjs - applied by the Update button: pull + install
                                  + build + restart (log: data/update.log)
-test/           parser test on real /metrics fixtures + auth/config/gateway/update tests
+test/           parser test on real /metrics fixtures + auth/config/gateway/client-access/update tests
 update.sh|.bat  one-shot install/update: pull + install --omit=dev + build
 ```
 
@@ -305,7 +312,8 @@ update.sh|.bat  one-shot install/update: pull + install --omit=dev + build
 - `GET /api/auth/gitlab/start` — redirect to GitLab; `GET /api/auth/gitlab/callback` — the OAuth callback endpoint: register exactly this URL as the redirect URI in the GitLab application
 - `GET /api/users`, `PATCH|DELETE /api/users/:id` — user management (admins only; PATCH takes `role`, `disabled`, `password`)
 - `GET /api/gateway/status` — queue lanes and per-server gateway load (admin only when auth is on)
-- `GET|POST /api/gateway/clients`, `PATCH|DELETE /api/gateway/clients/:id`, `POST /api/gateway/clients/:id/rotate`, `GET /api/gateway/clients/:id/ips` — gateway API tokens (admins only when auth is on; POST/rotate return the raw token once)
+- `GET|POST /api/gateway/clients`, `PATCH|DELETE /api/gateway/clients/:id`, `POST /api/gateway/clients/:id/rotate`, `GET /api/gateway/clients/:id/ips` — gateway API tokens (admins only when auth is on; POST/rotate return the raw token once; the view and POST/PATCH carry `serversAll`/`serverIds`)
+- `PUT /api/gateway/servers/:id/clients` — set which clients may route through that server (admin only when auth is on)
 - `/v1/**` — OpenAI-compatible gateway, authenticated by client tokens (`Authorization: Bearer msk_…`), not by the session cookie — see [Gateway](#gateway-load-balancer)
 - `WS /_ws` — push snapshots
 
@@ -316,6 +324,7 @@ node test/parse.test.mjs
 node test/auth.test.mjs
 node test/config.test.mjs
 node test/gateway.test.mjs
+node test/client-access.test.mjs
 node test/update.test.mjs
 ```
 

@@ -1,11 +1,11 @@
 import { loadConfig } from '../../utils/config'
-import { getGatewayClientByTokenHash, useDb, type ServerRow } from '../../utils/db'
+import { allowedServerIds, getGatewayClientByTokenHash, useDb, type ServerRow } from '../../utils/db'
 import { hashToken } from '../../utils/credentials'
 import { bearerFrom } from '../../utils/gateway/tokens'
 import { deriveSessionKey, SESSION_HEADER } from '../../utils/gateway/session'
 import { pickServer } from '../../utils/gateway/router'
 import {
-  acquireNow, cancelQueued, eject, getAffinity, QueueFullError, queueRequest,
+  acquireNow, cancelQueued, eject, filterLoads, getAffinity, QueueFullError, queueRequest,
   recordIpHit, recordUsage, release, reserve, serverLoads, setAffinity, QUEUE_CANCELLED
 } from '../../utils/gateway/state'
 import {
@@ -66,6 +66,8 @@ export default defineEventHandler(async (event) => {
 
   const clientIp = clientIpFrom(event)
   recordIpHit(client.id, clientIp)
+  // per-client server access: null = every server, else the explicitly granted ids
+  const allowed = allowedServerIds(client.id)
 
   // ---------- buffered body (session key + replayable forwarding) ----------
   const declaredLen = Number(getHeader(event, 'content-length') ?? '') || 0
@@ -97,7 +99,7 @@ export default defineEventHandler(async (event) => {
   const keyHash = deriveSessionKey(getHeader(event, SESSION_HEADER), parsed)
   const url = getRequestURL(event)
   const now = Date.now()
-  const loads = serverLoads(now)
+  const loads = filterLoads(serverLoads(now), allowed)
   if (!loads.some(s => s.mode === 'on' && (s.up || s.inflight > 0))) {
     return jsonError(503, 'No engine is online for routing (gateway)', 'no_upstream')
   }
@@ -165,7 +167,7 @@ export default defineEventHandler(async (event) => {
       }
       eject(server.id)
       releaseNow()
-      const alt = pickServer(serverLoads(Date.now()).filter(s => s.id !== server.id), null, Date.now()).serverId
+      const alt = pickServer(filterLoads(serverLoads(Date.now()), allowed).filter(s => s.id !== server.id), null, Date.now()).serverId
       if (attempt === 0 && alt != null) {
         failed.add(server.id)
         serverId = alt
@@ -179,7 +181,7 @@ export default defineEventHandler(async (event) => {
       void res.body?.cancel().catch(() => {})
       eject(server.id)
       releaseNow()
-      const alt = pickServer(serverLoads(Date.now()).filter(s => s.id !== server.id), null, Date.now()).serverId
+      const alt = pickServer(filterLoads(serverLoads(Date.now()), allowed).filter(s => s.id !== server.id), null, Date.now()).serverId
       if (alt != null) {
         failed.add(server.id)
         serverId = alt

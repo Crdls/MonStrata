@@ -59,6 +59,8 @@ export interface GatewayClientRow {
   /** expose X-MonStrata-* debug headers on this client's responses */
   debug: number
   enabled: number
+  /** 1 = every gateway server is reachable; 0 = only the gateway_client_servers pairs */
+  servers_all: number
   created_at: number
   created_by: number | null
 }
@@ -179,6 +181,12 @@ CREATE TABLE IF NOT EXISTS gateway_usage (
   gen_tokens    INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (client_id, day)
 );
+CREATE TABLE IF NOT EXISTS gateway_client_servers (
+  client_id INTEGER NOT NULL,
+  server_id INTEGER NOT NULL,
+  PRIMARY KEY (client_id, server_id)
+);
+CREATE INDEX IF NOT EXISTS idx_gcs_server ON gateway_client_servers (server_id);
 `
 
 let db: Database.Database | null = null
@@ -207,6 +215,7 @@ export function useDb (): Database.Database {
     ensureColumn(db, 'servers', 'gateway_mode', "TEXT NOT NULL DEFAULT 'on'")
     ensureColumn(db, 'servers', 'gateway_capacity', 'INTEGER')
     ensureColumn(db, 'users', 'lang', 'TEXT')
+    ensureColumn(db, 'gateway_clients', 'servers_all', 'INTEGER NOT NULL DEFAULT 1')
     // an empty pass_hash could only ever come from the GitLab OAuth sign-up
     db.prepare("UPDATE users SET gitlab = 1 WHERE pass_hash = '' AND gitlab = 0").run()
   }
@@ -400,12 +409,13 @@ export function setGatewayClientToken (id: number, tokenHash: string, tokenHint:
   useDb().prepare('UPDATE gateway_clients SET token_hash = ?, token_hint = ? WHERE id = ?').run(tokenHash, tokenHint, id)
 }
 
-/** Delete a client with its IP history and usage counters. */
+/** Delete a client with its IP history, usage counters and server access. */
 export function deleteGatewayClient (id: number): void {
   const db = useDb()
   db.transaction(() => {
     db.prepare('DELETE FROM gateway_client_ips WHERE client_id = ?').run(id)
     db.prepare('DELETE FROM gateway_usage WHERE client_id = ?').run(id)
+    db.prepare('DELETE FROM gateway_client_servers WHERE client_id = ?').run(id)
     db.prepare('DELETE FROM gateway_clients WHERE id = ?').run(id)
   })()
 }
@@ -414,6 +424,68 @@ export function listClientIps (clientId: number, limit: number): Array<{ ip: str
   return useDb()
     .prepare('SELECT ip, first_seen, last_seen, hits FROM gateway_client_ips WHERE client_id = ? ORDER BY last_seen DESC LIMIT ?')
     .all(clientId, limit) as Array<{ ip: string, first_seen: number, last_seen: number, hits: number }>
+}
+
+// ---------- gateway: client ⇄ server access ----------
+
+/** Server ids explicitly granted to a client (only used when servers_all = 0). */
+export function listClientServerIds (clientId: number): number[] {
+  return (useDb()
+    .prepare('SELECT server_id FROM gateway_client_servers WHERE client_id = ? ORDER BY server_id')
+    .all(clientId) as Array<{ server_id: number }>).map(r => r.server_id)
+}
+
+/**
+ * The router's view of a client's access: null = every server, otherwise the
+ * explicitly granted ids (an empty set when the selection was emptied).
+ */
+export function allowedServerIds (clientId: number): Set<number> | null {
+  const row = useDb().prepare('SELECT servers_all FROM gateway_clients WHERE id = ?').get(clientId) as { servers_all: number } | undefined
+  if (!row || row.servers_all === 1) return null
+  return new Set(listClientServerIds(clientId))
+}
+
+/** Client-side edit: either no restrictions or an explicit list of servers. */
+export function setClientServerAccess (clientId: number, serversAll: boolean, serverIds: number[]): void {
+  const db = useDb()
+  db.transaction(() => {
+    db.prepare('UPDATE gateway_clients SET servers_all = ? WHERE id = ?').run(serversAll ? 1 : 0, clientId)
+    db.prepare('DELETE FROM gateway_client_servers WHERE client_id = ?').run(clientId)
+    if (serversAll) return
+    const ins = db.prepare('INSERT OR IGNORE INTO gateway_client_servers (client_id, server_id) VALUES (?, ?)')
+    for (const serverId of new Set(serverIds)) ins.run(clientId, serverId)
+  })()
+}
+
+/**
+ * Server-side edit: the full set of clients allowed to route through this
+ * server. Unchecking an unrestricted client flips it to an explicit selection
+ * of the other current servers (future servers are then not granted
+ * automatically); checking a restricted client just adds the pair.
+ */
+export function setServerClientAccess (serverId: number, clientIds: number[]): void {
+  const db = useDb()
+  const wanted = new Set(clientIds)
+  const clients = db.prepare('SELECT id, servers_all FROM gateway_clients').all() as Array<{ id: number, servers_all: number }>
+  const otherServers = (db.prepare('SELECT id FROM servers WHERE id <> ?').all(serverId) as Array<{ id: number }>).map(r => r.id)
+  const hasPair = db.prepare('SELECT 1 FROM gateway_client_servers WHERE client_id = ? AND server_id = ?')
+  const addPair = db.prepare('INSERT OR IGNORE INTO gateway_client_servers (client_id, server_id) VALUES (?, ?)')
+  db.transaction(() => {
+    for (const c of clients) {
+      const allowed = c.servers_all === 1 || !!hasPair.get(c.id, serverId)
+      if (wanted.has(c.id)) {
+        if (!allowed) addPair.run(c.id, serverId)
+        continue
+      }
+      if (!allowed) continue
+      if (c.servers_all === 1) {
+        db.prepare('UPDATE gateway_clients SET servers_all = 0 WHERE id = ?').run(c.id)
+        for (const sid of otherServers) addPair.run(c.id, sid)
+      } else {
+        db.prepare('DELETE FROM gateway_client_servers WHERE client_id = ? AND server_id = ?').run(c.id, serverId)
+      }
+    }
+  })()
 }
 
 // ---------- gateway: chat affinity ----------

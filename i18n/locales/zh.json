@@ -20,7 +20,9 @@
     "liveHint": "通过 WebSocket 实时更新",
     "pollHint": "无 WebSocket — 页面每 5 秒轮询 API",
     "or": "或",
-    "ok": "确定"
+    "ok": "确定",
+    "selectAll": "全选",
+    "selectNone": "取消全选"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -81,7 +83,10 @@
     "toastPingFailed": "测试请求失败",
     "toastRemoved": "服务器已删除",
     "owner": "创建者：{name}",
-    "ownerUnknown": "创建者未知"
+    "ownerUnknown": "创建者未知",
+    "clients": "可用的客户",
+    "clientsHelp": "只有勾选的客户才能向此服务器发送请求。取消一个无限制客户的勾选会将其限制为其他现有服务器。",
+    "clientsEmpty": "尚无网关 API 客户。"
   },
   "server": {
     "noData": "该时间范围内无数据",
@@ -272,6 +277,11 @@
     "prioHigh": "高",
     "prioNormal": "普通",
     "prioLow": "低",
+    "servers": "可访问的服务器",
+    "serversHelp": "该客户的请求只会路由到勾选的服务器。",
+    "serversAll": "全部服务器",
+    "serversCount": "{n}/{total} 台服务器",
+    "serversEmpty": "尚无服务器——请先在服务器页面添加。",
     "debug": "调试请求头",
     "debugHelp": "为该客户端的响应添加 X-MonStrata-* 请求头（服务器、排队等待、会话）。",
     "customToken": "自定义令牌（可选）",

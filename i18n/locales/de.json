@@ -20,7 +20,9 @@
     "liveHint": "Live-Updates über WebSocket",
     "pollHint": "Kein WebSocket — die Seite fragt die API alle 5 s ab",
     "or": "oder",
-    "ok": "OK"
+    "ok": "OK",
+    "selectAll": "Alle auswählen",
+    "selectNone": "Auswahl aufheben"
   },
   "dashboard": {
     "title": "Übersicht",
@@ -81,7 +83,10 @@
     "toastPingFailed": "Test-Anfrage fehlgeschlagen",
     "toastRemoved": "Server entfernt",
     "owner": "von {name}",
-    "ownerUnknown": "unbekannter Ersteller"
+    "ownerUnknown": "unbekannter Ersteller",
+    "clients": "Für Clients verfügbar",
+    "clientsHelp": "Nur markierte Clients dürfen Anfragen an diesen Server senden. Ein Client ohne Einschränkungen wird durch Abwählen auf die übrigen aktuellen Server begrenzt.",
+    "clientsEmpty": "Noch keine Gateway-Clients."
   },
   "server": {
     "noData": "Keine Daten in diesem Bereich",
@@ -272,6 +277,11 @@
     "prioHigh": "Hoch",
     "prioNormal": "Normal",
     "prioLow": "Niedrig",
+    "servers": "Erreichbare Server",
+    "serversHelp": "Anfragen dieses Clients werden nur zu den markierten Servern geroutet.",
+    "serversAll": "Alle Server",
+    "serversCount": "{n} von {total} Servern",
+    "serversEmpty": "Noch keine Server — zuerst auf der Server-Seite hinzufügen.",
     "debug": "Debug-Header",
     "debugHelp": "Fügt den Antworten dieses Clients X-MonStrata-* Header (Server, Warteschlangenzeit, Sitzung) hinzu.",
     "customToken": "Eigenes Token (optional)",

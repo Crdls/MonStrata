@@ -232,6 +232,13 @@ Authorization: Bearer msk_…
   счётчики запросов и история IP-адресов; расход токенов считается из chunk-а
   `usage`, если клиент его запрашивает (например `stream_options.include_usage`),
   иначе это оценка по байтам (байты/4) — статистика, а не биллинг.
+- **Доступ клиентов к серверам** — каждого клиента можно ограничить набором
+  движков: на странице «Клиенты» отмечаются серверы, доступные клиенту, на
+  странице «Серверы» — клиентам, которым доступен сервер (там и там есть
+  кнопки «выделить все» и «снять выделение»). Новый клиент по умолчанию видит
+  все серверы и продолжает видеть добавленные позже, пока что-то не снято.
+  Снятие отметки с неограниченного клиента на странице «Серверы» ограничит его
+  остальными текущими серверами.
 - **Аффинити сессий** — чат продолжает обслуживать тот движок, где лежит его
   KV-префикс: решает заголовок `X-Session-Id`, если клиент его шлёт, иначе хеш
   начала разговора (system + первое сообщение пользователя); чаты прощевавшие
@@ -306,7 +313,8 @@ update.sh|.bat  установка/обновление одной команд�
 - `GET /api/auth/gitlab/start` — редирект в GitLab; `GET /api/auth/gitlab/callback` — callback OAuth: зарегистрируйте ровно этот URL как redirect URI в GitLab-приложении
 - `GET /api/users`, `PATCH|DELETE /api/users/:id` — управление юзерами (только админы; PATCH принимает `role`, `disabled`, `password`)
 - `GET /api/gateway/status` — уровни очереди и загрузка серверов в шлюзе (с авторизацией — только админам)
-- `GET|POST /api/gateway/clients`, `PATCH|DELETE /api/gateway/clients/:id`, `POST /api/gateway/clients/:id/rotate`, `GET /api/gateway/clients/:id/ips` — API-токены шлюза (с авторизацией — только админам; POST/rotate отдают токен один раз)
+- `GET|POST /api/gateway/clients`, `PATCH|DELETE /api/gateway/clients/:id`, `POST /api/gateway/clients/:id/rotate`, `GET /api/gateway/clients/:id/ips` — API-токены шлюза (с авторизацией — только админам; POST/rotate отдают токен один раз; во вью и в POST/PATCH есть поля `serversAll`/`serverIds`)
+- `PUT /api/gateway/servers/:id/clients` — задать, каким клиентам доступен этот сервер (с авторизацией — только админам)
 - `/v1/**` — OpenAI-совместимый шлюз, авторизация своими токенами клиентов (`Authorization: Bearer msk_…`), а не cookie сессии — см. раздел «Шлюз (балансировщик)»
 - `WS /_ws` — push-снапшоты
 
@@ -317,6 +325,7 @@ node test/parse.test.mjs
 node test/auth.test.mjs
 node test/config.test.mjs
 node test/gateway.test.mjs
+node test/client-access.test.mjs
 node test/update.test.mjs
 ```
 

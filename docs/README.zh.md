@@ -202,6 +202,11 @@ Authorization: Bearer msk_…
   `X-MonStrata-Session` 头。每个客户端都有请求计数和来源 IP 记录；
   token 用量在客户端索取 `usage` 数据块（如 `stream_options.include_usage`）
   时从引擎响应统计，否则按字节数/4 估算——是统计，不是账单。
+- **客户端的服务器访问权限** — 可以限制每个客户端可用的引擎集合：在「客户端」
+  页面勾选该客户可访问的服务器，在「服务器」页面勾选可使用该服务器的客户
+  （两处都有「全选 / 取消全选」按钮）。新客户默认可以访问所有服务器，
+  之后新增的服务器也自动可用，除非取消勾选。在服务器页面取消一个无限制
+  客户的勾选，会将其限制为其他现有服务器。
 - **会话亲和** — 一个会话会继续由持有其 KV 前缀缓存的引擎服务：客户端发送
   `X-Session-Id` 头时以它为准，否则以对话开头（system + 首条用户消息）的哈希
   作为映射键；空闲超过 `sessionIdleMin`（60 分钟）的会话可能落到其他引擎。
@@ -269,7 +274,8 @@ update.sh|.bat  一键安装/更新：pull + install --omit=dev + build
 - `GET /api/auth/gitlab/start` — 重定向到 GitLab；`GET /api/auth/gitlab/callback` — OAuth callback：请把这一 URL 原样注册为 GitLab 应用的 redirect URI
 - `GET /api/users`、`PATCH|DELETE /api/users/:id` — 用户管理（仅管理员；PATCH 接受 `role`、`disabled`、`password`）
 - `GET /api/gateway/status` — 队列通道与各服务器的网关负载（开启验证后仅管理员）
-- `GET|POST /api/gateway/clients`、`PATCH|DELETE /api/gateway/clients/:id`、`POST /api/gateway/clients/:id/rotate`、`GET /api/gateway/clients/:id/ips` — 网关 API 令牌（开启验证后仅管理员；POST/rotate 只返回一次原始令牌）
+- `GET|POST /api/gateway/clients`、`PATCH|DELETE /api/gateway/clients/:id`、`POST /api/gateway/clients/:id/rotate`、`GET /api/gateway/clients/:id/ips` — 网关 API 令牌（开启验证后仅管理员；POST/rotate 只返回一次原始令牌；视图和 POST/PATCH 带有 `serversAll`/`serverIds` 字段）
+- `PUT /api/gateway/servers/:id/clients` — 设置哪些客户可以使用该服务器（开启验证后仅管理员）
 - `/v1/**` — OpenAI 兼容网关，用客户端自己的令牌认证（`Authorization: Bearer msk_…`），不用会话 cookie — 见上文「网关（负载均衡器）」
 - `WS /_ws` — 推送快照
 
@@ -280,6 +286,7 @@ node test/parse.test.mjs
 node test/auth.test.mjs
 node test/config.test.mjs
 node test/gateway.test.mjs
+node test/client-access.test.mjs
 node test/update.test.mjs
 ```
 

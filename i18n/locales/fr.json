@@ -20,7 +20,9 @@
     "liveHint": "Mises à jour en direct par WebSocket",
     "pollHint": "Pas de WebSocket — la page interroge l'API toutes les 5 s",
     "or": "ou",
-    "ok": "OK"
+    "ok": "OK",
+    "selectAll": "Tout sélectionner",
+    "selectNone": "Tout décocher"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -81,7 +83,10 @@
     "toastPingFailed": "Échec du test",
     "toastRemoved": "Serveur supprimé",
     "owner": "par {name}",
-    "ownerUnknown": "auteur inconnu"
+    "ownerUnknown": "auteur inconnu",
+    "clients": "Disponible pour les clients",
+    "clientsHelp": "Seuls les clients cochés peuvent envoyer des requêtes à ce serveur. Décocher un client sans restrictions le limite aux autres serveurs actuels.",
+    "clientsEmpty": "Aucun client de passerelle pour le moment."
   },
   "server": {
     "noData": "Aucune donnée sur cette plage",
@@ -272,6 +277,11 @@
     "prioHigh": "Haute",
     "prioNormal": "Normale",
     "prioLow": "Basse",
+    "servers": "Serveurs accessibles",
+    "serversHelp": "Les requêtes de ce client ne sont dirigées que vers les serveurs cochés.",
+    "serversAll": "Tous les serveurs",
+    "serversCount": "{n} sur {total} serveurs",
+    "serversEmpty": "Aucun serveur — ajoutez-en sur la page Serveurs.",
     "debug": "En-têtes de débogage",
     "debugHelp": "Ajoute des en-têtes X-MonStrata-* (serveur, attente, session) aux réponses de ce client.",
     "customToken": "Jeton perso (facultatif)",

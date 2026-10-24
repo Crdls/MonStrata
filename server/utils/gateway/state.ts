@@ -4,7 +4,8 @@ import {
 } from '../db.ts'
 import { loadConfig } from '../config.ts'
 import { gatewayRuntime, runtime } from '../runtime.ts'
-import { pickServer } from './router.ts'
+import { allowedServerIds } from '../db.ts'
+import { hasCapacity, pickServer } from './router.ts'
 import { pickNext, type AgingMs, type QueueEntry } from './queue.ts'
 import type { ServerLoad } from './types.ts'
 
@@ -65,6 +66,16 @@ export function serverLoads (now: number): ServerLoad[] {
     kvUsage: maxMetric(s.id, 'vllm:kv_cache_usage_perc'),
     ejectedUntil: gw.ejectedUntil.get(s.id) ?? 0
   }))
+}
+
+/** Loads narrowed to what one client may use; a null allowed set changes nothing. */
+export function filterLoads (loads: ServerLoad[], allowed: Set<number> | null): ServerLoad[] {
+  return allowed ? loads.filter(s => allowed.has(s.id)) : loads
+}
+
+/** Live load of the engines this client is allowed to route to. */
+export function loadsForClient (loads: ServerLoad[], clientId: number): ServerLoad[] {
+  return filterLoads(loads, allowedServerIds(clientId))
 }
 
 export function reserve (serverId: number): void {
@@ -133,13 +144,21 @@ export class QueueFullError extends Error {
   }
 }
 
+/** True while at least one waiting request could still use one of its engines. */
+function queueHasReachableWork (now: number): boolean {
+  const gw = gatewayRuntime()
+  const loads = serverLoads(now)
+  return gw.queue.some(t => hasCapacity(loadsForClient(loads, t.clientId), now))
+}
+
 /**
  * The fast path: take a server right now, but only when nobody is waiting
- * (queued requests have priority over fresh arrivals — no queue-jumping).
+ * for work this arrival could not take itself (queued requests have priority
+ * over fresh arrivals — no queue-jumping within each client's reach).
  */
 export function acquireNow (loads: ServerLoad[], preferredId: number | null, now: number): ReturnType<typeof pickServer> {
   const gw = gatewayRuntime()
-  if (gw.queue.length > 0) return { serverId: null, affinity: false }
+  if (gw.queue.length > 0 && queueHasReachableWork(now)) return { serverId: null, affinity: false }
   const decision = pickServer(loads, preferredId, now)
   if (decision.serverId != null) reserve(decision.serverId)
   return decision
@@ -176,13 +195,17 @@ export function dispatch (): void {
   for (;;) {
     if (gw.queue.length === 0) return
     const now = Date.now()
-    const pick = pickNext(gw.queue, now, gw.served, AGING)
+    const loads = serverLoads(now)
+    // a task whose allowed engines are all saturated must not hold a lane
+    // other clients could use: no-queue-jumping applies within each reach
+    const movable = gw.queue.filter(t => hasCapacity(loadsForClient(loads, t.clientId), now))
+    const pick = pickNext(movable, now, gw.served, AGING)
     if (!pick) return
-    const task = gw.queue[pick.index]!
-    const decision = pickServer(serverLoads(now), task.preferredId, now)
+    const task = movable[pick.index]!
+    const decision = pickServer(loadsForClient(loads, task.clientId), task.preferredId, now)
     if (decision.serverId == null) return // the strict head cannot move — nobody jumps the lane
     gw.served.set(task.clientId, (gw.served.get(task.clientId) ?? 0) + 1)
-    gw.queue.splice(pick.index, 1)
+    gw.queue.splice(gw.queue.indexOf(task), 1)
     if (task.keyHash) setAffinity(task.keyHash, decision.serverId, now)
     reserve(decision.serverId)
     task.resolve(decision.serverId)

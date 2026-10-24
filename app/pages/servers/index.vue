@@ -31,6 +31,34 @@ function canManage (server: ServerRow): boolean {
   return server.createdBy != null && server.createdBy === user?.id
 }
 
+// ---------- client access selection (admins only: the client list is admin data) ----------
+interface ClientOption {
+  id: number
+  name: string
+  serversAll: boolean
+  serverIds: number[]
+}
+
+const canPickClients = computed(() => !status.value?.authEnabled || status.value?.user?.role === 'admin')
+const clientOptions = ref<ClientOption[]>([])
+const clientSel = ref<number[]>([])
+
+// loaded lazily when the form opens so a non-admin never requests the admin-only list
+async function loadClientAccess (serverId: number | null) {
+  clientOptions.value = []
+  clientSel.value = []
+  if (!canPickClients.value) return
+  try {
+    const list = await $fetch<ClientOption[]>('/api/gateway/clients')
+    clientOptions.value = list
+    clientSel.value = list.filter(c => c.serversAll || (serverId != null && c.serverIds.includes(serverId))).map(c => c.id)
+  } catch { /* not an admin or transient - the selector just stays empty */ }
+}
+
+function toggleIn (list: { value: number[] }, id: number, on: boolean): void {
+  list.value = on ? [...new Set([...list.value, id])] : list.value.filter(x => x !== id)
+}
+
 const formOpen = ref(false)
 const editing = ref<ServerRow | null>(null)
 const form = reactive({ name: '', url: '', apiKey: '', gatewayMode: 'on', gatewayCapacity: '' })
@@ -51,6 +79,7 @@ function openAdd () {
   form.apiKey = ''
   form.gatewayMode = 'on'
   form.gatewayCapacity = ''
+  void loadClientAccess(null)
   formOpen.value = true
 }
 
@@ -71,20 +100,27 @@ function openEdit (server: ServerRow) {
   form.apiKey = server.apiKey ?? ''
   form.gatewayMode = server.gatewayMode
   form.gatewayCapacity = server.gatewayCapacity == null ? '' : String(server.gatewayCapacity)
+  void loadClientAccess(server.id)
   formOpen.value = true
 }
 
 async function save () {
   saving.value = true
   try {
+    let serverId: number
     if (editing.value) {
       const capacity = form.gatewayCapacity.trim() === '' ? null : Number(form.gatewayCapacity)
-      await $fetch(`/api/servers/${editing.value.id}`, {
+      serverId = editing.value.id
+      await $fetch(`/api/servers/${serverId}`, {
         method: 'PATCH',
         body: { name: form.name, url: form.url, apiKey: form.apiKey, gatewayMode: form.gatewayMode, gatewayCapacity: capacity }
       })
     } else {
-      await $fetch('/api/servers', { method: 'POST', body: { name: form.name, url: form.url, apiKey: form.apiKey } })
+      const created = await $fetch<{ id: number }>('/api/servers', { method: 'POST', body: { name: form.name, url: form.url, apiKey: form.apiKey } })
+      serverId = created.id
+    }
+    if (canPickClients.value) {
+      await $fetch(`/api/gateway/servers/${serverId}/clients`, { method: 'PUT', body: { clientIds: clientSel.value } })
     }
     formOpen.value = false
     toast.add({ title: t('servers.toastSaved'), color: 'success' })
@@ -262,6 +298,23 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
           </UFormField>
           <UFormField :label="t('servers.apiKey')" :help="t('servers.apiKeyHelp')">
             <UInput v-model="form.apiKey" type="password" placeholder="sk-..." class="w-full" />
+          </UFormField>
+          <UFormField v-if="canPickClients" :label="t('servers.clients')" :help="t('servers.clientsHelp')">
+            <div class="flex items-center gap-2 mb-1.5">
+              <UButton size="xs" color="neutral" variant="outline" @click="clientSel = clientOptions.map(c => c.id)">
+                {{ t('common.selectAll') }}
+              </UButton>
+              <UButton size="xs" color="neutral" variant="outline" @click="clientSel = []">
+                {{ t('common.selectNone') }}
+              </UButton>
+            </div>
+            <div v-if="!clientOptions.length" class="text-sm text-muted">{{ t('servers.clientsEmpty') }}</div>
+            <div v-else class="max-h-40 overflow-y-auto rounded-md border border-default divide-y divide-default">
+              <label v-for="c in clientOptions" :key="c.id" class="flex items-center gap-2 px-2.5 py-1.5 text-sm cursor-pointer hover:bg-elevated/50">
+                <UCheckbox :model-value="clientSel.includes(c.id)" @update:model-value="toggleIn(clientSel, c.id, $event as boolean)" />
+                <span class="truncate">{{ c.name }}</span>
+              </label>
+            </div>
           </UFormField>
           <template v-if="editing">
             <UFormField :label="t('gateway.modeLabel')" :help="t('gateway.modeHelp')">
